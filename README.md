@@ -1,1 +1,2 @@
-Telegram bot for checking release of new episodes
+# PekSeries
+Android app for checking release of new episodes
