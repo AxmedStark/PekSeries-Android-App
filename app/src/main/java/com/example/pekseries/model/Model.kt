@@ -3,10 +3,13 @@ package com.example.pekseries.model
 import androidx.compose.ui.graphics.Color
 
 data class Show(
+    val id: String, // ID от TVMaze (нужен для базы)
     val title: String,
     val episode: String,
     val time: String,
-    val isNew: Boolean = false
+    val imageUrl: String,
+    val isNew: Boolean = false,
+    val isWatched: Boolean = false // <-- Новое поле
 )
 
 data class TrendingItem(

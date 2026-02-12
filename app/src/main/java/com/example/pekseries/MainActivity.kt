@@ -17,7 +17,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-// Импорт твоих экранов и темы
 import com.example.pekseries.ui.screen.*
 import com.example.pekseries.ui.theme.*
 
@@ -53,8 +52,8 @@ fun PekSeriesApp() {
                         selected = selectedScreen == index,
                         onClick = { selectedScreen = index },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Red,
-                            selectedTextColor = Red,
+                            selectedIconColor = Primary,
+                            selectedTextColor = Primary,
                             indicatorColor = DarkBg,
                             unselectedIconColor = Color.Gray,
                             unselectedTextColor = Color.Gray

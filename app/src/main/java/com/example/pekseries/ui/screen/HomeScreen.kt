@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -23,17 +24,24 @@ import androidx.compose.ui.unit.sp
 import com.example.pekseries.model.Show
 import com.example.pekseries.ui.theme.*
 
+// ... твои импорты ...
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.example.pekseries.ui.viewmodels.HomeViewModel
+import com.example.pekseries.ui.viewmodels.HomeUiState
+
 @Composable
-fun HomeScreen() {
-    val newShows = listOf(
-        Show("The Bear", "S03 • Episode 01", "34 min", true),
-        Show("House of the Dragon", "S02 • Episode 04", "58 min", true),
-        Show("The Boys", "S04 • Episode 05", "62 min", true)
-    )
+fun HomeScreen(
+    // Android сам создаст ViewModel и переживет повороты экрана
+    viewModel: HomeViewModel = viewModel()
+) {
+    // Подписываемся на состояние (как только ViewModel обновит данные, экран перерисуется)
+    val uiState by viewModel.uiState.collectAsState()
 
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         item {
-            // Header
+            // Header (оставляем как был)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -43,8 +51,8 @@ fun HomeScreen() {
                     Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.Gray))
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text("Welcome back", color = TextSecondary, fontSize = 12.sp)
-                        Text("Hello, Alex", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+//                        Text("Welcome back", color = TextSecondary, fontSize = 12.sp)
+                        Text("Hello, pek", color = Primary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     }
                 }
                 Icon(Icons.Filled.Notifications, "Notify", tint = Color.White)
@@ -58,21 +66,51 @@ fun HomeScreen() {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Just Released", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text("See All", color = Red, fontSize = 14.sp)
+                Text("Just Released", color = Primary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                // Кнопка обновления (на случай ошибки)
+                IconButton(onClick = { viewModel.loadEpisodes() }) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = Primary)
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        items(newShows) { show ->
-            HomeShowCard(show)
-            Spacer(modifier = Modifier.height(12.dp))
+        // --- ГЛАВНАЯ МАГИЯ ---
+        when (val state = uiState) {
+            is HomeUiState.Loading -> {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Primary)
+                    }
+                }
+            }
+            is HomeUiState.Error -> {
+                item {
+                    Text(text = state.message, color = Primary)
+                }
+            }
+            is HomeUiState.Success -> {
+                if (state.shows.isEmpty()) {
+                    item { Text("Сегодня ничего не вышло 😔", color = Color.Gray) }
+                } else {
+                    items(state.shows) { show ->
+                        HomeShowCard(
+                            show = show,
+                            onCheckClick = { viewModel.toggleWatched(show) } // Передаем клик во ViewModel
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun HomeShowCard(show: Show) {
+fun HomeShowCard(
+    show: Show,
+    onCheckClick: () -> Unit // <-- Добавили колбэк
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -84,10 +122,10 @@ fun HomeShowCard(show: Show) {
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             if (show.isNew) {
-                Text("AIRED TODAY", color = Red, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text("AIRED TODAY", color = Primary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
-            Text(show.title, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(show.episode, color = TextSecondary, fontSize = 12.sp)
+            Text(show.title, color = PekYellow, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(show.episode, color = TextPrimary, fontSize = 12.sp)
             Spacer(modifier = Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.CheckCircle, null, tint = TextSecondary, modifier = Modifier.size(12.dp))
@@ -95,8 +133,12 @@ fun HomeShowCard(show: Show) {
                 Text(show.time, color = TextSecondary, fontSize = 12.sp)
             }
         }
-        IconButton(onClick = { }) {
-            Icon(Icons.Outlined.CheckCircle, null, tint = TextSecondary)
+        IconButton(onClick = onCheckClick) { // <-- Вызываем колбэк при клике
+            Icon(
+                imageVector = if (show.isWatched) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle, // Меняем иконку (закрашенная/пустая)
+                contentDescription = null,
+                tint = if (show.isWatched) PekYellow else TextSecondary // Меняем цвет (Красный/Серый)
+            )
         }
     }
 }
