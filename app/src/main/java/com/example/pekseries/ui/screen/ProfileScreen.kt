@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.example.pekseries.ui.theme.*
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(onLogout: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -67,7 +67,7 @@ fun ProfileScreen() {
         Spacer(modifier = Modifier.weight(1f))
 
         OutlinedButton(
-            onClick = {},
+            onClick = onLogout,
             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3E1212)),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = Red),
             modifier = Modifier.fillMaxWidth().height(50.dp)

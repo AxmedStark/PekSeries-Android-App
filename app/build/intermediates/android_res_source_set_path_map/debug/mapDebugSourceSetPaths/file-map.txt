@@ -1,0 +1,8 @@
+com.example.pekseries.app-pngs-0 C:\Users\AxmedStark\StudioProjects\PekSeries-Android-App\app\build\generated\res\pngs\debug
+com.example.pekseries.app-res-1 C:\Users\AxmedStark\StudioProjects\PekSeries-Android-App\app\build\generated\res\processDebugGoogleServices
+com.example.pekseries.app-updated_navigation_xml-2 C:\Users\AxmedStark\StudioProjects\PekSeries-Android-App\app\build\generated\updated_navigation_xml\debug
+com.example.pekseries.app-packageDebugResources-3 C:\Users\AxmedStark\StudioProjects\PekSeries-Android-App\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.example.pekseries.app-packageDebugResources-4 C:\Users\AxmedStark\StudioProjects\PekSeries-Android-App\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.example.pekseries.app-debug-5 C:\Users\AxmedStark\StudioProjects\PekSeries-Android-App\app\build\intermediates\merged_res\debug\mergeDebugResources
+com.example.pekseries.app-debug-6 C:\Users\AxmedStark\StudioProjects\PekSeries-Android-App\app\src\debug\res
+com.example.pekseries.app-main-7 C:\Users\AxmedStark\StudioProjects\PekSeries-Android-App\app\src\main\res

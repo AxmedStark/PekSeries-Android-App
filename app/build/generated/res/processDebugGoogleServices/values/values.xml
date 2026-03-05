@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="default_web_client_id" translatable="false">310344138149-i95ajk8v3uv5oh6pjbe5hkulv25fubot.apps.googleusercontent.com</string>
+    <string name="gcm_defaultSenderId" translatable="false">310344138149</string>
+    <string name="google_api_key" translatable="false">AIzaSyANBZVFYqUKXXF2U25Sf8mNBLi5U_T-cHw</string>
+    <string name="google_app_id" translatable="false">1:310344138149:android:4a0064f818f61d49dafc4c</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyANBZVFYqUKXXF2U25Sf8mNBLi5U_T-cHw</string>
+    <string name="google_storage_bucket" translatable="false">pekseries.firebasestorage.app</string>
+    <string name="project_id" translatable="false">pekseries</string>
+</resources>

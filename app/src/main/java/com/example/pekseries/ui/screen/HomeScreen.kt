@@ -28,8 +28,8 @@ import com.example.pekseries.ui.theme.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import com.example.pekseries.ui.viewmodels.HomeViewModel
-import com.example.pekseries.ui.viewmodels.HomeUiState
+import com.example.pekseries.ui.viewmodel.HomeViewModel
+import com.example.pekseries.ui.viewmodel.HomeUiState
 
 @Composable
 fun HomeScreen(
