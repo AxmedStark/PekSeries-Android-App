@@ -1,6 +1,7 @@
 package com.example.pekseries.ui.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,9 +19,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pekseries.model.TimelineItem
 import com.example.pekseries.ui.theme.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import com.example.pekseries.ui.viewmodel.WatchlistViewModel
+import com.example.pekseries.model.Show
 
 @Composable
-fun UpcomingScreen() {
+fun UpcomingScreen(
+    onNavigateToDetail: (String) -> Unit = {},
+    viewModel: WatchlistViewModel = viewModel()
+) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Upcoming", "Subscriptions")
 
@@ -54,49 +63,161 @@ fun UpcomingScreen() {
         Spacer(modifier = Modifier.height(16.dp))
 
         when (selectedTabIndex) {
-            0 -> UpcomingContent()
-            1 -> SubscriptionsContent()
+            0 -> UpcomingContent(viewModel, onNavigateToDetail)
+            1 -> SubscriptionsContent(
+                viewModel = viewModel,
+                onNavigateToDetail = onNavigateToDetail
+            )
         }
     }
 }
 
 @Composable
-fun UpcomingContent() {
-    val todayShows = listOf(
-        TimelineItem("08:00", "The Boys", "S04 • E06 'Dirty Business'", true),
-        TimelineItem("09:00", "House of Dragon", "S02 • E03 'The Burning Mill'", true),
-        TimelineItem("10:30", "The Bear", "S03 • E01 'Tomorrow'", true)
-    )
-    val tomorrowShows = listOf(
-        TimelineItem("07:00", "Presumed Innocent", "S01 • E04"),
-        TimelineItem("08:00", "The Acolyte", "S01 • E05")
-    )
+fun UpcomingContent(
+    viewModel: WatchlistViewModel,
+    onNavigateToDetail: (String) -> Unit
+) {
+    val todayEpisodes by viewModel.todayEpisodes.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Today", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text("LIVE UPDATES", color = DarkBg, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.background(PekYellow, RoundedCornerShape(4.dp)).padding(4.dp))
+    if (isLoading && todayEpisodes.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = Primary)
+        }
+    } else if (todayEpisodes.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No upcoming episodes for your subscriptions 🍿", color = Color.Gray)
+        }
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
+        ) {
+            item {
+                Text(
+                    text = "Upcoming Releases",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
             }
-            Spacer(modifier = Modifier.height(16.dp))
+
+            items(todayEpisodes) { show ->
+                UpcomingEpisodeCard(show = show, onClick = { onNavigateToDetail(show.id) })
+            }
         }
-
-        items(todayShows) { show -> TimelineRow(show) }
-
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Tomorrow, June 28", color = Color.Gray, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        items(tomorrowShows) { show -> TimelineRow(show) }
     }
 }
 
 @Composable
-fun SubscriptionsContent() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Здесь будут карточки сериалов,\nна которые ты подписался", color = Color.Gray, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+fun SubscriptionsContent(
+    viewModel: WatchlistViewModel,
+    onNavigateToDetail: (String) -> Unit
+) {
+    val subscriptions by viewModel.subscriptions.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadSubscriptions()
+    }
+
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = Primary)
+        }
+    } else if (subscriptions.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("У вас пока нет подписок 🎬", color = Color.Gray)
+        }
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
+        ) {
+            items(subscriptions) { show ->
+                SubscriptionCard(show = show, onClick = { onNavigateToDetail(show.id) })
+            }
+        }
+    }
+}
+
+@Composable
+fun UpcomingEpisodeCard(show: Show, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp)
+            .clickable { onClick() },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier.width(60.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            val safeTime = show.time ?: "TBA"
+            val displayDate = if (safeTime.length >= 10) safeTime.substring(5) else safeTime
+            Text(
+                text = displayDate,
+                color = com.example.pekseries.ui.theme.PekYellow,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp
+            )
+        }
+
+        Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
+            Text(
+                text = show.title ?: "Unknown Show",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = show.episode ?: "Episode info TBA",
+                color = Color.Gray,
+                fontSize = 13.sp,
+                lineHeight = 18.sp
+            )
+        }
+
+        AsyncImage(
+            model = show.imageUrl,
+            contentDescription = "Poster",
+            modifier = Modifier
+                .size(width = 55.dp, height = 80.dp)
+                .clip(RoundedCornerShape(8.dp)),
+            contentScale = ContentScale.Crop
+        )
+    }
+}
+
+@Composable
+fun SubscriptionCard(show: Show, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = CardBg)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = show.imageUrl,
+                contentDescription = null,
+                modifier = Modifier.size(width = 70.dp, height = 100.dp).clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(show.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Subscribed", color = Primary, fontSize = 14.sp)
+            }
+        }
     }
 }
 

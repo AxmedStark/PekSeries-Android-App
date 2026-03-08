@@ -123,6 +123,10 @@ int attr unplayed_color 0x7f040071
 int attr uri 0x7f040072
 int attr use_artwork 0x7f040073
 int attr use_controller 0x7f040074
+int bool enable_system_alarm_service_default 0x7f130000
+int bool enable_system_foreground_service_default 0x7f130001
+int bool enable_system_job_service_default 0x7f130002
+int bool workmanager_test_configuration 0x7f130003
 int color androidx_core_ripple_material_light 0x7f050000
 int color androidx_core_secondary_text_default_material_light 0x7f050001
 int color black 0x7f050002

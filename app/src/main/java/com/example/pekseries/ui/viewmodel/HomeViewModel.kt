@@ -21,18 +21,26 @@ class HomeViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    private var currentFilter: String = "Airing Today"
+
     init {
-        loadEpisodes()
+        loadEpisodes(currentFilter)
     }
 
-    fun loadEpisodes() {
+    fun loadEpisodes(filterCategory: String = "Actual", query: String = "") {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                val shows = repository.getTodayEpisodes()
+                val shows = when (filterCategory) {
+                    "Popular" -> repository.getPopularToday()
+                    "Upcoming" -> repository.getUpcomingPremieres()
+                    "Actual" -> repository.getRecentEpisodes()
+                    "Genre", "Type", "Year" -> repository.searchShows(query)
+                    else -> repository.getTodayEpisodes()
+                }
                 _uiState.value = HomeUiState.Success(shows)
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error("Ошибка загрузки: ${e.message}")
+                _uiState.value = HomeUiState.Error("Load error: ${e.message}")
             }
         }
     }

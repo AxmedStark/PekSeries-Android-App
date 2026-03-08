@@ -80,4 +80,7 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.android.gms:play-services-auth:21.5.1")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+
 }

@@ -10,6 +10,9 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,42 +20,45 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pekseries.ui.theme.*
 
 @Composable
-fun ProfileScreen(onLogout: () -> Unit) {
+fun ProfileScreen(
+    onLogout: () -> Unit,
+    viewModel: com.example.pekseries.ui.viewmodel.WatchlistViewModel = viewModel()
+) {
+    val stats by viewModel.profileStats.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadProfileStats()
+    }
+
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.Transparent) // Заглушка для центровки
             Text("Profile", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Icon(Icons.Filled.Settings, null, tint = Color.White)
         }
         Spacer(modifier = Modifier.height(30.dp))
 
         Box {
-            Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.LightGray))
-            Box(modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .background(PekYellow, RoundedCornerShape(8.dp))
-                .padding(horizontal = 8.dp, vertical = 2.dp)
-            ) {
-                Text("PRO", color = DarkBg, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-            }
+            Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.DarkGray))
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Ahmad", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        Text("Pro Member • Since 2024", color = Primary, fontSize = 14.sp)
+        Text("Axmed Stark", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Text("@AxmedStark • Baku, Azerbaijan", color = Primary, fontSize = 14.sp)
 
         Spacer(modifier = Modifier.height(30.dp))
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            StatCard("124", "SERIES")
-            StatCard("3,520", "EPISODES")
-            StatCard("1,840", "HOURS")
+            StatCard(stats.first.toString(), "SERIES")
+            StatCard(stats.second.toString(), "EPISODES")
+            StatCard(stats.third.toString(), "HOURS")
         }
 
         Spacer(modifier = Modifier.height(30.dp))
@@ -60,10 +66,9 @@ fun ProfileScreen(onLogout: () -> Unit) {
         Text("Preferences", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
         Spacer(modifier = Modifier.height(10.dp))
 
-
         PreferenceItem("Push Notifications", true)
-        PreferenceItem("Telegram Sync", true)
-        PreferenceItem("Dark Mode", true)
+//        PreferenceItem("Telegram Sync", true)
+//        PreferenceItem("Dark mode", true)
 
         Spacer(modifier = Modifier.weight(1f))
 

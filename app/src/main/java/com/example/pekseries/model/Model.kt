@@ -2,6 +2,7 @@ package com.example.pekseries.model
 
 import androidx.compose.ui.graphics.Color
 import com.google.gson.annotations.SerializedName
+import com.example.pekseries.data.remote.TvMazeShowDto
 
 data class Show(
     val id: String,
@@ -23,10 +24,11 @@ data class Episode(
     val name: String,
     val season: Int,
     val number: Int,
-    val airdate: String,
-
-    val videoUrl: String = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-)
+    val airdate: String? = null
+) {
+    val videoUrl: String
+        get() = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+}
 data class TvMazeImage(
     val medium: String?
 )
@@ -44,5 +46,6 @@ data class TimelineItem(
 )
 
 data class SearchResponseItem(
-    val show: Show
+    val score: Double? = null,
+    val show: TvMazeShowDto
 )

@@ -64,7 +64,8 @@ fun SearchScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
-                        .clickable { onNavigateToDetail(item.show.id) },
+                        .clickable { onNavigateToDetail(item.show.id.toString()) },
+//                        .clickable { onNavigateToDetail(item.show.id) },
                     colors = CardDefaults.cardColors(
                         containerColor = androidx.compose.ui.graphics.Color(0xFF2C2C2C)
                     )
@@ -77,7 +78,7 @@ fun SearchScreen(
                     ) {
 
                         AsyncImage(
-                            model = item.show.getPosterUrl(),
+                            model = item.show.image?.medium,
                             contentDescription = "Poster",
                             modifier = Modifier
                                 .size(width = 70.dp, height = 100.dp)
@@ -88,7 +89,7 @@ fun SearchScreen(
 
                         Column {
                             Text(
-                                text = item.show.title,
+                                text = item.show.name,
                                 color = androidx.compose.ui.graphics.Color.White,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold

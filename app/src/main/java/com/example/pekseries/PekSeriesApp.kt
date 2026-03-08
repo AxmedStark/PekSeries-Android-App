@@ -20,6 +20,8 @@ import com.example.pekseries.ui.viewmodel.AuthViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.activity.compose.BackHandler
 
 @Composable
 fun PekSeriesApp() {
@@ -34,9 +36,14 @@ fun PekSeriesApp() {
             composable("main") {
                 PekSeriesMainContent(
                     onLogout = { authViewModel.logout() },
-                    onNavigateToDetail = { showId ->
-                        navController.navigate("detail/$showId")
-                    }
+                    onNavigateToDetail = { showId -> navController.navigate("detail/$showId") },
+                    onNavigateToNotifications = { navController.navigate("notifications") }
+                )
+            }
+
+            composable("notifications") {
+                NotificationsScreen(
+                    onBackClick = { navController.popBackStack() }
                 )
             }
 
@@ -67,9 +74,14 @@ fun PekSeriesApp() {
 @Composable
 fun PekSeriesMainContent(
     onLogout: () -> Unit,
-    onNavigateToDetail: (String) -> Unit
+    onNavigateToDetail: (String) -> Unit,
+    onNavigateToNotifications: () -> Unit
 ) {
-    var selectedScreen by remember { mutableIntStateOf(0) }
+    var selectedScreen by rememberSaveable { mutableIntStateOf(0) }
+
+    BackHandler(enabled = selectedScreen != 0) {
+        selectedScreen = 0
+    }
 
     Scaffold(
         bottomBar = {
@@ -103,9 +115,9 @@ fun PekSeriesMainContent(
             .background(PekDarkBg)
             .padding(padding)) {
             when (selectedScreen) {
-                0 -> HomeScreen(onNavigateToDetail = onNavigateToDetail)
+                0 -> HomeScreen(onNavigateToDetail = onNavigateToDetail, onNavigateToNotifications = onNavigateToNotifications)
                 1 -> SearchScreen(onNavigateToDetail = onNavigateToDetail)
-                2 -> UpcomingScreen()
+                2 -> UpcomingScreen(onNavigateToDetail = onNavigateToDetail)
                 3 -> ProfileScreen(onLogout)
             }
         }
