@@ -41,7 +41,6 @@ fun PekSeriesApp() {
             }
 
             composable("detail/{showId}") { backStackEntry ->
-                // Достаем ID сериала из маршрута
                 val showId = backStackEntry.arguments?.getString("showId") ?: ""
                 DetailScreen(
                     showId = showId,
