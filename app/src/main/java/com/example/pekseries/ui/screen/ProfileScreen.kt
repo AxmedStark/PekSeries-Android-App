@@ -36,16 +36,16 @@ fun ProfileScreen(onLogout: () -> Unit) {
             Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.LightGray))
             Box(modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .background(Red, RoundedCornerShape(8.dp))
+                .background(PekYellow, RoundedCornerShape(8.dp))
                 .padding(horizontal = 8.dp, vertical = 2.dp)
             ) {
-                Text("PRO", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text("PRO", color = DarkBg, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Alex Johnson", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        Text("Pro Member • Since 2022", color = Red, fontSize = 14.sp)
+        Text("Ahmad", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Text("Pro Member • Since 2024", color = Primary, fontSize = 14.sp)
 
         Spacer(modifier = Modifier.height(30.dp))
 
@@ -60,6 +60,7 @@ fun ProfileScreen(onLogout: () -> Unit) {
         Text("Preferences", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
         Spacer(modifier = Modifier.height(10.dp))
 
+
         PreferenceItem("Push Notifications", true)
         PreferenceItem("Telegram Sync", true)
         PreferenceItem("Dark Mode", true)
@@ -68,8 +69,8 @@ fun ProfileScreen(onLogout: () -> Unit) {
 
         OutlinedButton(
             onClick = onLogout,
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3E1212)),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Red),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.5f)),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = PekYellow),
             modifier = Modifier.fillMaxWidth().height(50.dp)
         ) {
             Icon(Icons.AutoMirrored.Filled.ExitToApp, null)
@@ -105,12 +106,19 @@ fun PreferenceItem(text: String, enabled: Boolean) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(32.dp).background(Color(0xFF2B1212), RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.Settings, null, tint = Red, modifier = Modifier.size(16.dp))
+            Box(modifier = Modifier.size(32.dp).background(Primary.copy(alpha = 0.2f), RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.Settings, null, tint = Primary, modifier = Modifier.size(16.dp))
             }
             Spacer(modifier = Modifier.width(16.dp))
             Text(text, color = Color.White)
         }
-        Switch(checked = enabled, onCheckedChange = {}, colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Color.Gray))
+        Switch(
+            checked = enabled,
+            onCheckedChange = {},
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Primary,
+                checkedTrackColor = PekYellow
+            )
+        )
     }
 }

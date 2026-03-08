@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.pekseries.app-mergeDebugResources-52:/values-v21/values-v21.xml",
+            "outputFile": "com.example.pekseries.app-mergeDebugResources-54:/values-v21/values-v21.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\AxmedStark\\.gradle\\caches\\9.2.1\\transforms\\bee2a3cd4cd2c0833a732e3fb1286581\\workspace\\transformed\\core-1.15.0\\res\\values-v21\\values-v21.xml",
+                    "source": "C:\\Users\\AxmedStark\\.gradle\\caches\\9.4.0-rc-1\\transforms\\4f1d977be59d21368321cbf642b58fca\\transformed\\core-1.15.0\\res\\values-v21\\values-v21.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,13",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4",
@@ -23,7 +23,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\AxmedStark\\.gradle\\caches\\9.2.1\\transforms\\bbe2846feb6a04527c9f50d511f5ba22\\workspace\\transformed\\credentials-play-services-auth-1.2.0-rc01\\res\\values-v21\\values-v21.xml",
+                    "source": "C:\\Users\\AxmedStark\\.gradle\\caches\\9.4.0-rc-1\\transforms\\606bea98f12f108215c4aadf0675f0d9\\transformed\\credentials-play-services-auth-1.2.0-rc01\\res\\values-v21\\values-v21.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

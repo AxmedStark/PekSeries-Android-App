@@ -6,10 +6,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,6 +21,47 @@ import com.example.pekseries.ui.theme.*
 
 @Composable
 fun UpcomingScreen() {
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Upcoming", "Subscriptions")
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("Watchlist", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TabRow(
+            selectedTabIndex = selectedTabIndex,
+            containerColor = Color.Transparent,
+            contentColor = Primary,
+            indicator = { tabPositions ->
+                TabRowDefaults.SecondaryIndicator(
+                    Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                    color = Primary
+                )
+            },
+            divider = { HorizontalDivider(color = Color.DarkGray) }
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTabIndex == index,
+                    onClick = { selectedTabIndex = index },
+                    text = { Text(title, fontWeight = FontWeight.Bold) },
+                    selectedContentColor = Primary,
+                    unselectedContentColor = Color.Gray
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        when (selectedTabIndex) {
+            0 -> UpcomingContent()
+            1 -> SubscriptionsContent()
+        }
+    }
+}
+
+@Composable
+fun UpcomingContent() {
     val todayShows = listOf(
         TimelineItem("08:00", "The Boys", "S04 • E06 'Dirty Business'", true),
         TimelineItem("09:00", "House of Dragon", "S02 • E03 'The Burning Mill'", true),
@@ -32,36 +72,16 @@ fun UpcomingScreen() {
         TimelineItem("08:00", "The Acolyte", "S01 • E05")
     )
 
-    LazyColumn(modifier = Modifier.padding(16.dp)) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
         item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Upcoming", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Icon(Icons.Filled.Person, null, tint = Color.White)
-            }
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                listOf("Watchlist", "All Shows", "Premieres").forEach {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(it, color = if(it=="Watchlist") Red else Color.Gray, fontWeight = FontWeight.Bold)
-                        if(it=="Watchlist") Box(modifier = Modifier.width(20.dp).height(2.dp).background(Red))
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-
-        item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("Today", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text("LIVE UPDATES", color = Red, fontSize = 10.sp, modifier = Modifier.background(Red.copy(alpha=0.2f), RoundedCornerShape(4.dp)).padding(4.dp))
+                Text("LIVE UPDATES", color = DarkBg, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.background(PekYellow, RoundedCornerShape(4.dp)).padding(4.dp))
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        items(todayShows) { show ->
-            TimelineRow(show)
-        }
+        items(todayShows) { show -> TimelineRow(show) }
 
         item {
             Spacer(modifier = Modifier.height(24.dp))
@@ -69,9 +89,14 @@ fun UpcomingScreen() {
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        items(tomorrowShows) { show ->
-            TimelineRow(show)
-        }
+        items(tomorrowShows) { show -> TimelineRow(show) }
+    }
+}
+
+@Composable
+fun SubscriptionsContent() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text("Здесь будут карточки сериалов,\nна которые ты подписался", color = Color.Gray, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
 
@@ -80,9 +105,9 @@ fun TimelineRow(item: TimelineItem) {
     IntrinsicSize.Min
     Row(modifier = Modifier.height(IntrinsicSize.Min)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(50.dp)) {
-            Text(item.time, color = if(item.isLive) Red else Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text(item.time, color = if(item.isLive) PekYellow else Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(4.dp))
-            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(if(item.isLive) Red else Color.Gray))
+            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(if(item.isLive) PekYellow else Color.Gray))
             Box(modifier = Modifier.width(2.dp).fillMaxHeight().background(Color.DarkGray))
         }
 

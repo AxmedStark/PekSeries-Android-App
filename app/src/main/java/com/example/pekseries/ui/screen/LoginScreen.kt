@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pekseries.R
 import com.example.pekseries.ui.theme.DarkBg
+import com.example.pekseries.ui.theme.PekYellow
+import com.example.pekseries.ui.theme.Primary
 import com.example.pekseries.ui.theme.Red
 import com.example.pekseries.ui.viewmodel.AuthViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -44,9 +46,6 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
     val error by authViewModel.error.collectAsState()
     val context = LocalContext.current
 
-    // --- НАСТРОЙКА GOOGLE SIGN IN ---
-    // Получаем ID клиента, который генерирует google-services.json
-    // Если здесь ошибка - сделай Build -> Rebuild Project
     val token = stringResource(R.string.default_web_client_id)
 
     val gso = remember {
@@ -63,8 +62,6 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        // Мы убрали проверку if (result.resultCode == RESULT_OK),
-        // чтобы ловить абсолютно все ответы от Google, даже отмены и сбои.
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         try {
             val account = task.getResult(ApiException::class.java)
@@ -72,12 +69,10 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
                 authViewModel.signInWithGoogle(idToken)
             }
         } catch (e: ApiException) {
-            // Теперь Тост выскочит в любом случае!
             Toast.makeText(context, "Ошибка Google: ${e.statusCode}", Toast.LENGTH_LONG).show()
         }
     }
 
-    // --- UI ---
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -90,10 +85,9 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Логотип / Заголовок
             Text(
                 text = "PekSeries",
-                color = Red,
+                color = Primary,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -106,7 +100,6 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Поле Email
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -118,9 +111,10 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
                     unfocusedTextColor = Color.White,
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Red,
+                    focusedIndicatorColor = Primary,
                     unfocusedIndicatorColor = Color.Gray,
-                    focusedLabelColor = Red,
+                    cursorColor = PekYellow,
+                    focusedLabelColor = Primary,
                     unfocusedLabelColor = Color.Gray
                 ),
                 modifier = Modifier.fillMaxWidth()
@@ -128,7 +122,6 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Поле Пароль
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -147,27 +140,26 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
                     unfocusedTextColor = Color.White,
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Red,
+                    focusedIndicatorColor = Primary,
                     unfocusedIndicatorColor = Color.Gray,
-                    focusedLabelColor = Red,
+                    cursorColor = PekYellow,
+                    focusedLabelColor = Primary,
                     unfocusedLabelColor = Color.Gray
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Отображение ошибки
             if (error != null) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = error ?: "",
-                    color = Red,
+                    color = PekYellow,
                     fontSize = 14.sp
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Основная кнопка (Login / Register)
             Button(
                 onClick = {
                     if (isRegisterMode) {
@@ -176,7 +168,7 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
                         authViewModel.login(email, password)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Red),
+                colors = ButtonDefaults.buttonColors(containerColor = Primary),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -184,7 +176,7 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
             ) {
                 Text(
                     text = if (isRegisterMode) "Sign Up" else "Log In",
-                    color = Color.White,
+                    color = Color.Black,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -192,7 +184,6 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Разделитель
             Row(verticalAlignment = Alignment.CenterVertically) {
                 HorizontalDivider(modifier = Modifier.weight(1f), color = Color.Gray)
                 Text(
@@ -205,7 +196,6 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Кнопка Google
             OutlinedButton(
                 onClick = {
                     googleSignInLauncher.launch(googleSignInClient.signInIntent)
@@ -220,15 +210,11 @@ fun LoginScreen(authViewModel: AuthViewModel = viewModel()) {
                 ),
                 border = BorderStroke(1.dp, Color.Gray)
             ) {
-                // Если у тебя есть иконка гугла в res/drawable/ic_google.xml, раскомментируй строку ниже:
-                // Icon(painter = painterResource(id = R.drawable.ic_google), contentDescription = null, tint = Color.Unspecified)
-                // Spacer(modifier = Modifier.width(8.dp))
                 Text("Sign in with Google")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Переключатель режима (текстовая кнопка внизу)
             TextButton(onClick = { isRegisterMode = !isRegisterMode }) {
                 Text(
                     text = if (isRegisterMode) "Already have an account? Log In" else "New here? Create Account",

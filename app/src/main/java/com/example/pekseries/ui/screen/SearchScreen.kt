@@ -1,115 +1,107 @@
 package com.example.pekseries.ui.screen
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.TextFieldDefaults.colors
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.pekseries.model.TrendingItem
-import com.example.pekseries.ui.theme.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.example.pekseries.ui.theme.PekYellow
+import com.example.pekseries.ui.theme.Primary
+import com.example.pekseries.ui.viewmodel.SearchViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen() {
-    val categories = listOf("Trending", "Action", "Comedy", "Anime", "Drama")
-    val trending = listOf(
-        TrendingItem("Neon Nights", Color.Cyan),
-        TrendingItem("Shadow Realm", Color.Green),
-        TrendingItem("Golden Throne", Color.Yellow),
-        TrendingItem("Spirit Walker", Color.Blue)
-    )
+fun SearchScreen(
+    searchViewModel: SearchViewModel = viewModel()
+) {
+    val query by searchViewModel.searchQuery.collectAsState()
+    val results by searchViewModel.searchResults.collectAsState()
+    val isLoading by searchViewModel.isLoading.collectAsState()
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        TextField(
-            value = "",
-            onValueChange = {},
-            placeholder = { Text("Find movies & series...") },
-            leadingIcon = { Icon(Icons.Filled.Search, null) },
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = CardBg,
-                unfocusedContainerColor = CardBg,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor = Color.White
+    Column(modifier = Modifier.fillMaxSize()) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = { searchViewModel.onQueryChange(it) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            placeholder = { Text("Find a show...") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            singleLine = true,
+            colors = colors(
+                focusedIndicatorColor = Primary,
+                cursorColor = PekYellow,
+                unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent
             )
         )
-        Spacer(modifier = Modifier.height(16.dp))
 
-        LazyRow {
-            items(categories) { cat ->
-                val isSelected = cat == "Trending"
-                Button(
-                    onClick = {},
-                    colors = ButtonDefaults.buttonColors(containerColor = if (isSelected) Red else CardBg),
-                    modifier = Modifier.padding(end = 8.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Primary)
+            }
+        }
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp)
+        ) {
+            items(results) { item ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = androidx.compose.ui.graphics.Color(0xFF2C2C2C)
+                    )
                 ) {
-                    Text(cat, color = Color.White)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        AsyncImage(
+                            model = item.show.getPosterUrl(),
+                            contentDescription = "Poster",
+                            modifier = Modifier
+                                .size(width = 70.dp, height = 100.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Column {
+                            Text(
+                                text = item.show.title,
+                                color = androidx.compose.ui.graphics.Color.White,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            )
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Text(
+                                text = "TV Show",
+                                color = androidx.compose.ui.graphics.Color.Gray,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
                 }
             }
         }
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Text("Trending Now", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(12.dp))
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(trending) { item ->
-                TrendingCard(item)
-            }
-        }
-    }
-}
-
-@Composable
-fun TrendingCard(item: TrendingItem) {
-    Box(
-        modifier = Modifier
-            .height(220.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.DarkGray)
-    ) {
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black))))
-
-        Box(modifier = Modifier
-            .align(Alignment.TopEnd)
-            .padding(8.dp)
-            .size(32.dp)
-            .clip(CircleShape)
-            .background(Red),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(Icons.Filled.Add, null, tint = Color.White, modifier = Modifier.size(20.dp))
-        }
-
-        Text(
-            item.title,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.align(Alignment.BottomStart).padding(12.dp)
-        )
     }
 }

@@ -20,28 +20,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-// Импорты твоих файлов
 import com.example.pekseries.model.Show
 import com.example.pekseries.ui.theme.*
-
-// ... твои импорты ...
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.example.pekseries.ui.viewmodel.HomeViewModel
 import com.example.pekseries.ui.viewmodel.HomeUiState
+import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun HomeScreen(
-    // Android сам создаст ViewModel и переживет повороты экрана
     viewModel: HomeViewModel = viewModel()
 ) {
-    // Подписываемся на состояние (как только ViewModel обновит данные, экран перерисуется)
     val uiState by viewModel.uiState.collectAsState()
 
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         item {
-            // Header (оставляем как был)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -51,7 +48,6 @@ fun HomeScreen(
                     Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.Gray))
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-//                        Text("Welcome back", color = TextSecondary, fontSize = 12.sp)
                         Text("Hello, pek", color = Primary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     }
                 }
@@ -67,7 +63,7 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Just Released", color = Primary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                // Кнопка обновления (на случай ошибки)
+
                 IconButton(onClick = { viewModel.loadEpisodes() }) {
                     Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = Primary)
                 }
@@ -75,7 +71,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // --- ГЛАВНАЯ МАГИЯ ---
+
         when (val state = uiState) {
             is HomeUiState.Loading -> {
                 item {
@@ -96,7 +92,7 @@ fun HomeScreen(
                     items(state.shows) { show ->
                         HomeShowCard(
                             show = show,
-                            onCheckClick = { viewModel.toggleWatched(show) } // Передаем клик во ViewModel
+                            onCheckClick = { viewModel.toggleWatched(show) }
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                     }
@@ -109,7 +105,7 @@ fun HomeScreen(
 @Composable
 fun HomeShowCard(
     show: Show,
-    onCheckClick: () -> Unit // <-- Добавили колбэк
+    onCheckClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -118,27 +114,42 @@ fun HomeShowCard(
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(modifier = Modifier.width(60.dp).height(80.dp).clip(RoundedCornerShape(8.dp)).background(Color.DarkGray))
+        AsyncImage(
+            model = show.getPosterUrl(),
+            contentDescription = "Poster for ${show.title}",
+            modifier = Modifier
+                .width(60.dp)
+                .height(80.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.DarkGray),
+            contentScale = ContentScale.Crop
+        )
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             if (show.isNew) {
                 Text("AIRED TODAY", color = Primary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
             Text(show.title, color = PekYellow, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(show.episode, color = TextPrimary, fontSize = 12.sp)
+            Text(show.episode ?: "", color = TextPrimary, fontSize = 12.sp)
             Spacer(modifier = Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.CheckCircle, null, tint = TextSecondary, modifier = Modifier.size(12.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(show.time, color = TextSecondary, fontSize = 12.sp)
+                Text(show.time ?: "", color = TextSecondary, fontSize = 12.sp)
             }
         }
-        IconButton(onClick = onCheckClick) { // <-- Вызываем колбэк при клике
+        IconButton(onClick = onCheckClick) {
             Icon(
-                imageVector = if (show.isWatched) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle, // Меняем иконку (закрашенная/пустая)
+                imageVector = if (show.isWatched) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
                 contentDescription = null,
-                tint = if (show.isWatched) PekYellow else TextSecondary // Меняем цвет (Красный/Серый)
+                tint = if (show.isWatched) PekYellow else TextSecondary
             )
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HomeScreenPreview() {
+    HomeScreen()
 }

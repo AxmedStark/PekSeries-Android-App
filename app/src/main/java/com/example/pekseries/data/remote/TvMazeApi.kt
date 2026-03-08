@@ -1,18 +1,21 @@
 package com.example.pekseries.data.remote
 
+import com.example.pekseries.model.SearchResponseItem
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-// Интерфейс для запросов
 interface TvMazeApi {
     @GET("schedule")
     suspend fun getSchedule(
         @Query("country") country: String = "US",
-        @Query("date") date: String // Формат YYYY-MM-DD
+        @Query("date") date: String
     ): List<TvMazeEpisodeDto>
-}
 
-// --- DTO (Data Transfer Objects) - чистые данные из JSON ---
+    @GET("search/shows")
+    suspend fun searchSeries(
+        @Query("q") query: String
+    ): List<SearchResponseItem>
+}
 
 data class TvMazeEpisodeDto(
     val id: Int,

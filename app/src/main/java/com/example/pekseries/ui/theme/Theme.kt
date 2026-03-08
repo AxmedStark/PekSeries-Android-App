@@ -16,19 +16,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Настраиваем цветовую схему для ТЕМНОЙ темы (основная)
 private val DarkColorScheme = darkColorScheme(
-    primary = PekRed,            // Кнопки, активные элементы
-    secondary = PekRed,          // Вторичные элементы
+    primary = PekRed,
+    secondary = PekRed,
     tertiary = PekGray,
-    background = PekDarkBg,      // Фон всего экрана
-    surface = PekCardBg,         // Фон карточек и меню
-    onPrimary = Color.White,     // Текст на красной кнопке
-    onBackground = PekWhite,     // Текст на темном фоне
-    onSurface = PekWhite         // Текст на карточках
+    background = PekDarkBg,
+    surface = PekCardBg,
+    onPrimary = Color.White,
+    onBackground = PekWhite,
+    onSurface = PekWhite
 )
 
-// Светлая тема (на всякий случай, но цвета тоже темные для стиля)
 private val LightColorScheme = lightColorScheme(
     primary = PekRed,
     secondary = PekRed,
@@ -43,8 +41,6 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun PekSeriesTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color доступен на Android 12+.
-    // Мы ставим false, чтобы сохранить твой фирменный красный стиль.
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -54,16 +50,14 @@ fun PekSeriesTheme(
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
         darkTheme -> DarkColorScheme
-        else -> DarkColorScheme // Всегда используем темную схему, даже если телефон в светлом режиме
+        else -> DarkColorScheme
     }
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            // Красим статус-бар (верхнюю полоску) в цвет фона
             window.statusBarColor = colorScheme.background.toArgb()
-            // Делаем иконки статус-бара светлыми
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }

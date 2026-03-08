@@ -9,7 +9,6 @@ import com.google.firebase.auth.GoogleAuthProvider
 class AuthViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
 
-    // Состояние: залогинен ли юзер прямо сейчас?
     private val _isUserLoggedIn = MutableStateFlow(auth.currentUser != null)
     val isUserLoggedIn = _isUserLoggedIn.asStateFlow()
 
