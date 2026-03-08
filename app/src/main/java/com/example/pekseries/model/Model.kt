@@ -18,7 +18,15 @@ data class Show(
         return image?.medium ?: imageUrl ?: ""
     }
 }
+data class Episode(
+    val id: String,
+    val name: String,
+    val season: Int,
+    val number: Int,
+    val airdate: String,
 
+    val videoUrl: String = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+)
 data class TvMazeImage(
     val medium: String?
 )

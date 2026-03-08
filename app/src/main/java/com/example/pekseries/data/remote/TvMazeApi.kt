@@ -1,7 +1,9 @@
 package com.example.pekseries.data.remote
 
+import com.example.pekseries.model.Episode
 import com.example.pekseries.model.SearchResponseItem
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface TvMazeApi {
@@ -10,7 +12,8 @@ interface TvMazeApi {
         @Query("country") country: String = "US",
         @Query("date") date: String
     ): List<TvMazeEpisodeDto>
-
+    @GET("shows/{id}/episodes")
+    suspend fun getShowEpisodes(@Path("id") showId: String): List<Episode>
     @GET("search/shows")
     suspend fun searchSeries(
         @Query("q") query: String

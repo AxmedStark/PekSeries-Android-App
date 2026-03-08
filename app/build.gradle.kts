@@ -63,31 +63,21 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    // Сеть (Retrofit + JSON конвертер)
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")
     implementation("androidx.navigation:navigation-compose:2.7.7")
-    // Firebase (BOM управляет версиями)
     implementation(platform("com.google.firebase:firebase-bom:34.10.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
-
-    // Асинхронность (Coroutines)
+    implementation("androidx.media3:media3-exoplayer:1.3.1")
+    implementation("androidx.media3:media3-ui:1.3.1")
+    implementation("androidx.media3:media3-common:1.3.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-
-    // Жизненный цикл (ViewModel)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
-    // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:34.10.0"))
-
     implementation("io.coil-kt:coil-compose:2.6.0")
-    // TODO: Add the dependencies for Firebase products you want to use
-    // When using the BoM, don't specify versions in Firebase dependencies
     implementation("com.google.firebase:firebase-analytics")
-
     implementation("com.google.android.gms:play-services-auth:21.5.1")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
-// Add the dependencies for any other desired Firebase products
-    // https://firebase.google.com/docs/android/setup#available-libraries
 }
