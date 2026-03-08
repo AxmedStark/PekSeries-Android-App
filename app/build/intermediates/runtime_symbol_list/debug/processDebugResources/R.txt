@@ -5,15 +5,22 @@ int animator fragment_fade_enter 0x7f020002
 int animator fragment_fade_exit 0x7f020003
 int animator fragment_open_enter 0x7f020004
 int animator fragment_open_exit 0x7f020005
+int attr action 0x7f03002d
 int attr activityAction 0x7f030000
 int attr activityName 0x7f030001
 int attr alpha 0x7f030002
 int attr alwaysExpand 0x7f030003
 int attr animationBackgroundColor 0x7f030004
+int attr argType 0x7f03002e
 int attr buttonSize 0x7f030005
 int attr circleCrop 0x7f030006
 int attr clearTop 0x7f030007
 int attr colorScheme 0x7f030008
+int attr data 0x7f03002f
+int attr dataPattern 0x7f030030
+int attr destination 0x7f030031
+int attr enterAnim 0x7f030032
+int attr exitAnim 0x7f030033
 int attr finishPrimaryWithPlaceholder 0x7f030009
 int attr finishPrimaryWithSecondary 0x7f03000a
 int attr finishSecondaryWithPrimary 0x7f03000b
@@ -29,13 +36,25 @@ int attr fontProviderSystemFontFamily 0x7f030014
 int attr fontStyle 0x7f030015
 int attr fontVariationSettings 0x7f030016
 int attr fontWeight 0x7f030017
+int attr graph 0x7f030034
 int attr imageAspectRatio 0x7f030018
 int attr imageAspectRatioAdjust 0x7f030019
 int attr lStar 0x7f03001a
+int attr launchSingleTop 0x7f030035
+int attr mimeType 0x7f030036
+int attr navGraph 0x7f030037
 int attr nestedScrollViewStyle 0x7f03001b
+int attr nullable 0x7f030038
 int attr placeholderActivityName 0x7f03001c
+int attr popEnterAnim 0x7f030039
+int attr popExitAnim 0x7f03003a
+int attr popUpTo 0x7f03003b
+int attr popUpToInclusive 0x7f03003c
+int attr popUpToSaveState 0x7f03003d
 int attr primaryActivityName 0x7f03001d
 int attr queryPatterns 0x7f03001e
+int attr restoreState 0x7f03003e
+int attr route 0x7f03003f
 int attr scopeUris 0x7f03001f
 int attr secondaryActivityAction 0x7f030020
 int attr secondaryActivityName 0x7f030021
@@ -47,9 +66,12 @@ int attr splitMinHeightDp 0x7f030026
 int attr splitMinSmallestWidthDp 0x7f030027
 int attr splitMinWidthDp 0x7f030028
 int attr splitRatio 0x7f030029
+int attr startDestination 0x7f030040
 int attr stickyPlaceholder 0x7f03002a
 int attr tag 0x7f03002b
+int attr targetPackage 0x7f030041
 int attr ttcIndex 0x7f03002c
+int attr uri 0x7f030042
 int color androidx_core_ripple_material_light 0x7f040000
 int color androidx_core_secondary_text_default_material_light 0x7f040001
 int color black 0x7f040002
@@ -230,6 +252,7 @@ int id line1 0x7f07004c
 int id line3 0x7f07004d
 int id locale 0x7f07004e
 int id ltr 0x7f07004f
+int id nav_controller_view_tag 0x7f070077
 int id never 0x7f070050
 int id none 0x7f070051
 int id normal 0x7f070052
@@ -424,6 +447,12 @@ int style Widget_Compat_NotificationActionText 0x7f0d000d
 int[] styleable ActivityFilter { 0x7f030000, 0x7f030001 }
 int styleable ActivityFilter_activityAction 0
 int styleable ActivityFilter_activityName 1
+int[] styleable ActivityNavigator { 0x01010003, 0x7f03002d, 0x7f03002f, 0x7f030030, 0x7f030041 }
+int styleable ActivityNavigator_android_name 0
+int styleable ActivityNavigator_action 1
+int styleable ActivityNavigator_data 2
+int styleable ActivityNavigator_dataPattern 3
+int styleable ActivityNavigator_targetPackage 4
 int[] styleable ActivityRule { 0x7f030003, 0x7f03002b }
 int styleable ActivityRule_alwaysExpand 0
 int styleable ActivityRule_tag 1
@@ -498,6 +527,38 @@ int[] styleable LoadingImageView { 0x7f030006, 0x7f030018, 0x7f030019 }
 int styleable LoadingImageView_circleCrop 0
 int styleable LoadingImageView_imageAspectRatio 1
 int styleable LoadingImageView_imageAspectRatioAdjust 2
+int[] styleable NavAction { 0x010100d0, 0x7f030031, 0x7f030032, 0x7f030033, 0x7f030035, 0x7f030039, 0x7f03003a, 0x7f03003b, 0x7f03003c, 0x7f03003d, 0x7f03003e }
+int styleable NavAction_android_id 0
+int styleable NavAction_destination 1
+int styleable NavAction_enterAnim 2
+int styleable NavAction_exitAnim 3
+int styleable NavAction_launchSingleTop 4
+int styleable NavAction_popEnterAnim 5
+int styleable NavAction_popExitAnim 6
+int styleable NavAction_popUpTo 7
+int styleable NavAction_popUpToInclusive 8
+int styleable NavAction_popUpToSaveState 9
+int styleable NavAction_restoreState 10
+int[] styleable NavArgument { 0x01010003, 0x010101ed, 0x7f03002e, 0x7f030038 }
+int styleable NavArgument_android_name 0
+int styleable NavArgument_android_defaultValue 1
+int styleable NavArgument_argType 2
+int styleable NavArgument_nullable 3
+int[] styleable NavDeepLink { 0x010104ee, 0x7f03002d, 0x7f030036, 0x7f030042 }
+int styleable NavDeepLink_android_autoVerify 0
+int styleable NavDeepLink_action 1
+int styleable NavDeepLink_mimeType 2
+int styleable NavDeepLink_uri 3
+int[] styleable NavGraphNavigator { 0x7f030040 }
+int styleable NavGraphNavigator_startDestination 0
+int[] styleable NavHost { 0x7f030037 }
+int styleable NavHost_navGraph 0
+int[] styleable NavInclude { 0x7f030034 }
+int styleable NavInclude_graph 0
+int[] styleable Navigator { 0x01010001, 0x010100d0, 0x7f03003f }
+int styleable Navigator_android_label 0
+int styleable Navigator_android_id 1
+int styleable Navigator_route 2
 int[] styleable SignInButton { 0x7f030005, 0x7f030008, 0x7f03001f }
 int styleable SignInButton_buttonSize 0
 int styleable SignInButton_colorScheme 1

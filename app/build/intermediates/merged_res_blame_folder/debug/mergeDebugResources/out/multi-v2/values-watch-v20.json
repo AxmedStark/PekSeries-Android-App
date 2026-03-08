@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.pekseries.app-mergeDebugResources-54:/values-watch-v20/values-watch-v20.xml",
+            "outputFile": "com.example.pekseries.app-mergeDebugResources-59:/values-watch-v20/values-watch-v20.xml",
             "map": [
                 {
                     "source": "C:\\Users\\AxmedStark\\.gradle\\caches\\9.4.0-rc-1\\transforms\\5ef8298c1be1091968ba2661115c38a6\\transformed\\play-services-auth-21.5.1\\res\\values-watch-v20\\values.xml",

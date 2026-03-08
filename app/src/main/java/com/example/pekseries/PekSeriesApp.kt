@@ -17,6 +17,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pekseries.ui.screen.*
 import com.example.pekseries.ui.theme.*
 import com.example.pekseries.ui.viewmodel.AuthViewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 
 @Composable
 fun PekSeriesApp() {
@@ -24,14 +27,49 @@ fun PekSeriesApp() {
     val isLoggedIn by authViewModel.isUserLoggedIn.collectAsState()
 
     if (isLoggedIn) {
-        PekSeriesMainContent(onLogout = { authViewModel.logout() })
+        val navController = rememberNavController()
+
+        NavHost(navController = navController, startDestination = "main") {
+
+            composable("main") {
+                PekSeriesMainContent(
+                    onLogout = { authViewModel.logout() },
+                    onNavigateToDetail = { showId ->
+                        navController.navigate("detail/$showId")
+                    }
+                )
+            }
+
+            composable("detail/{showId}") { backStackEntry ->
+                // Достаем ID сериала из маршрута
+                val showId = backStackEntry.arguments?.getString("showId") ?: ""
+                DetailScreen(
+                    showId = showId,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+        }
     } else {
         LoginScreen(authViewModel = authViewModel)
     }
 }
+//@Composable
+//fun PekSeriesApp() {
+//    val authViewModel: AuthViewModel = viewModel()
+//    val isLoggedIn by authViewModel.isUserLoggedIn.collectAsState()
+//
+//    if (isLoggedIn) {
+//        PekSeriesMainContent(onLogout = { authViewModel.logout() })
+//    } else {
+//        LoginScreen(authViewModel = authViewModel)
+//    }
+//}
 
 @Composable
-fun PekSeriesMainContent(onLogout: () -> Unit) {
+fun PekSeriesMainContent(
+    onLogout: () -> Unit,
+    onNavigateToDetail: (String) -> Unit
+) {
     var selectedScreen by remember { mutableIntStateOf(0) }
 
     Scaffold(
@@ -66,8 +104,8 @@ fun PekSeriesMainContent(onLogout: () -> Unit) {
             .background(PekDarkBg)
             .padding(padding)) {
             when (selectedScreen) {
-                0 -> HomeScreen()
-                1 -> SearchScreen()
+                0 -> HomeScreen(onNavigateToDetail = onNavigateToDetail)
+                1 -> SearchScreen(onNavigateToDetail = onNavigateToDetail)
                 2 -> UpcomingScreen()
                 3 -> ProfileScreen(onLogout)
             }

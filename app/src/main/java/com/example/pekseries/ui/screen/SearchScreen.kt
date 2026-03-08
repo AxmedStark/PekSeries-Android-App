@@ -19,11 +19,13 @@ import coil.compose.AsyncImage
 import com.example.pekseries.ui.theme.PekYellow
 import com.example.pekseries.ui.theme.Primary
 import com.example.pekseries.ui.viewmodel.SearchViewModel
+import androidx.compose.foundation.clickable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
-    searchViewModel: SearchViewModel = viewModel()
+    searchViewModel: SearchViewModel = viewModel(),
+    onNavigateToDetail: (String) -> Unit = {}
 ) {
     val query by searchViewModel.searchQuery.collectAsState()
     val results by searchViewModel.searchResults.collectAsState()
@@ -61,7 +63,8 @@ fun SearchScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .padding(vertical = 8.dp)
+                        .clickable { onNavigateToDetail(item.show.id) },
                     colors = CardDefaults.cardColors(
                         containerColor = androidx.compose.ui.graphics.Color(0xFF2C2C2C)
                     )

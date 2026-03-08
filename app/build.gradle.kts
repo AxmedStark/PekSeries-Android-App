@@ -66,7 +66,7 @@ dependencies {
     // Сеть (Retrofit + JSON конвертер)
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")
-
+    implementation("androidx.navigation:navigation-compose:2.7.7")
     // Firebase (BOM управляет версиями)
     implementation(platform("com.google.firebase:firebase-bom:34.10.0"))
     implementation("com.google.firebase:firebase-analytics")

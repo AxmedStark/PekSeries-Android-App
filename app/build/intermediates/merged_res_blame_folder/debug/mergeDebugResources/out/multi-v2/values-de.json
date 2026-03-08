@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.pekseries.app-mergeDebugResources-54:/values-de/values-de.xml",
+            "outputFile": "com.example.pekseries.app-mergeDebugResources-59:/values-de/values-de.xml",
             "map": [
                 {
                     "source": "C:\\Users\\AxmedStark\\.gradle\\caches\\9.4.0-rc-1\\transforms\\319075ed188f0ea35c653645571ccbb3\\transformed\\ui-release\\res\\values-de\\values-de.xml",

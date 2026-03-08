@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.pekseries.app-mergeDebugResources-54:/values-si/values-si.xml",
+            "outputFile": "com.example.pekseries.app-mergeDebugResources-59:/values-si/values-si.xml",
             "map": [
                 {
                     "source": "C:\\Users\\AxmedStark\\.gradle\\caches\\9.4.0-rc-1\\transforms\\6a455949c4bc002ef477b1ebd1664ef7\\transformed\\play-services-basement-18.9.0\\res\\values-si\\values.xml",

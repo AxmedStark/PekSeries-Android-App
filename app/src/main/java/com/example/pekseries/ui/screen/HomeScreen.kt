@@ -1,6 +1,7 @@
 package com.example.pekseries.ui.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -33,7 +34,8 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel(),
+    onNavigateToDetail: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -92,7 +94,8 @@ fun HomeScreen(
                     items(state.shows) { show ->
                         HomeShowCard(
                             show = show,
-                            onCheckClick = { viewModel.toggleWatched(show) }
+                            onCheckClick = { viewModel.toggleWatched(show) },
+                            onCardClick = { onNavigateToDetail(show.id) }
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                     }
@@ -105,12 +108,15 @@ fun HomeScreen(
 @Composable
 fun HomeShowCard(
     show: Show,
-    onCheckClick: () -> Unit
+    onCheckClick: () -> Unit,
+    onCardClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(CardBg, RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(12.dp))
+            .background(CardBg)
+            .clickable { onCardClick() }
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -151,5 +157,5 @@ fun HomeShowCard(
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
-    HomeScreen()
+    HomeScreen(onNavigateToDetail = {})
 }

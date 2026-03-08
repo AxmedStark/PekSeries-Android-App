@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.pekseries.app-mergeDebugResources-54:/values-en-rXC/values-en-rXC.xml",
+            "outputFile": "com.example.pekseries.app-mergeDebugResources-59:/values-en-rXC/values-en-rXC.xml",
             "map": [
                 {
                     "source": "C:\\Users\\AxmedStark\\.gradle\\caches\\9.4.0-rc-1\\transforms\\0ec41ff874e1f711e152c818d9a628b5\\transformed\\browser-1.4.0\\res\\values-en-rXC\\values-en-rXC.xml",
