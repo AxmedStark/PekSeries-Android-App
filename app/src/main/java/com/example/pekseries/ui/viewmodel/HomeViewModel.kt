@@ -34,7 +34,7 @@ class HomeViewModel : ViewModel() {
                 val shows = when (filterCategory) {
                     "Popular" -> repository.getPopularToday()
                     "Upcoming" -> repository.getUpcomingPremieres()
-                    "Actual" -> repository.getRecentEpisodes()
+                    "Actual" -> repository.getTodayEpisodes()
                     "Genre", "Type", "Year" -> repository.searchShows(query)
                     else -> repository.getTodayEpisodes()
                 }

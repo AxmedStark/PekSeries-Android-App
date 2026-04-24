@@ -11,4 +11,6 @@ public final class BuildConfig {
   public static final String VERSION_NAME = "1.0";
   // Field from build type: debug
   public static final String BASE_URL = "https://api.tvmaze.com";
+  // Field from default config.
+  public static final String TMDB_API_KEY = "315ab2985403575b53854ab7281a3e4f";
 }

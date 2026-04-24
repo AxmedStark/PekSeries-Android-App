@@ -1,41 +1,213 @@
 package com.example.pekseries.data.repository
 
 import android.util.Log
+import com.example.pekseries.BuildConfig
 import com.example.pekseries.data.NetworkClient
+import com.example.pekseries.data.remote.TmdbShowDetailDto
+import com.example.pekseries.data.remote.TmdbShowDto
 import com.example.pekseries.model.Episode
-import com.example.pekseries.model.SearchResponseItem
 import com.example.pekseries.model.Show
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
-import java.time.LocalDate
 
 class SeriesRepository {
-    private val api = NetworkClient.api
+    private val tmdbApi = NetworkClient.tmdbApi
+    private val tvMazeApi = NetworkClient.tvMazeApi
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
+    // Ключ берется безопасно из local.properties
+    private val API_KEY = BuildConfig.TMDB_API_KEY
+
+    // ==========================================
+    // 1. TMDB: ГЛАВНАЯ СТРАНИЦА И ПОИСК
+    // ==========================================
+
+    private suspend fun mapTmdbToShow(dto: TmdbShowDto, isNew: Boolean = false): Show {
+        val watchedIds = getWatchedEpisodeIdsFromFirebase()
+        return Show(
+            id = dto.id.toString(),
+            title = dto.name,
+            episode = dto.first_air_date?.let { "Премьера: $it" } ?: "TMDB",
+            time = dto.vote_average?.let { "Рейтинг: ★ $it" } ?: "",
+            imageUrl = dto.getFullPosterUrl(),
+            isNew = isNew,
+            isWatched = watchedIds.contains(dto.id.toString())
+        )
+    }
+
     suspend fun getTodayEpisodes(): List<Show> {
-        val today = LocalDate.now().toString()
+        return try {
+            val response = tmdbApi.getAiringToday(API_KEY)
+            response.results.map { mapTmdbToShow(it, isNew = true) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
 
-        try {
-            val apiEpisodes = api.getSchedule(date = today)
-            val watchedIds = getWatchedEpisodeIdsFromFirebase()
+    suspend fun getPopularToday(): List<Show> {
+        return try {
+            val response = tmdbApi.getTrending(API_KEY)
+            response.results.map { mapTmdbToShow(it) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
 
-            return apiEpisodes.map { dto ->
-                Show(
-                    id = dto.show.id.toString(),
-                    title = dto.show.name,
-                    episode = "S${dto.season} • E${dto.number}",
-                    time = dto.airtime,
-                    imageUrl = dto.show.image?.medium ?: "",
-                    isNew = true,
-                    isWatched = watchedIds.contains(dto.id.toString())
-                )
+    suspend fun getUpcomingPremieres(): List<Show> {
+        return try {
+            val response = tmdbApi.getOnTheAir(API_KEY)
+            response.results.map { mapTmdbToShow(it) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun discoverShows(genreId: String?, year: String?, typeId: String?): List<Show> {
+        return try {
+            val response = tmdbApi.discoverShows(
+                apiKey = API_KEY,
+                genreIds = genreId,
+                year = year,
+                type = typeId
+            )
+            response.results.map { mapTmdbToShow(it) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun searchShows(query: String): List<Show> {
+        return try {
+            val response = tmdbApi.searchSeries(API_KEY, query)
+            response.results.map { mapTmdbToShow(it) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    // ==========================================
+    // 2. DETAIL SCREEN И МОСТ (TMDB -> TVMAZE)
+    // ==========================================
+
+    suspend fun getShowDetails(tmdbId: String): TmdbShowDetailDto? {
+        return try {
+            tmdbApi.getShowDetails(tmdbId, API_KEY)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    // Тот самый мост!
+    suspend fun getTvMazeId(tmdbId: String): String? {
+        return try {
+            val tmdbDetails = tmdbApi.getShowDetails(tmdbId, API_KEY)
+            val imdbId = tmdbDetails.external_ids?.imdb_id
+
+            if (!imdbId.isNullOrEmpty()) {
+                val tvMazeShow = tvMazeApi.getTvMazeShowByImdb(imdbId)
+                tvMazeShow.id.toString()
+            } else {
+                null
             }
         } catch (e: Exception) {
-            Log.e("PekRepo", "Error fetching episodes", e)
-            return emptyList()
+            Log.e("PekRepo", "Ошибка моста API", e)
+            null
+        }
+    }
+
+    suspend fun getShowEpisodes(tvMazeId: String): List<Episode> {
+        return try {
+            val episodes = tvMazeApi.getShowEpisodes(tvMazeId)
+            episodes.reversed() // Разворачиваем, чтобы новые серии были сверху
+        } catch (e: Exception) {
+            Log.e("PekRepo", "Ошибка загрузки серий TVMaze", e)
+            emptyList()
+        }
+    }
+
+    // ==========================================
+    // 3. FIREBASE И ПОДПИСКИ (Работают по TVMaze ID)
+    // ==========================================
+
+    private suspend fun getWatchedEpisodeIdsFromFirebase(): Set<String> {
+        val userId = auth.currentUser?.uid ?: return emptySet()
+        return try {
+            val snapshot = db.collection("users").document(userId).collection("watched_episodes").get().await()
+            snapshot.documents.map { it.id }.toSet()
+        } catch (e: Exception) {
+            emptySet()
+        }
+    }
+
+    suspend fun markEpisodeAsWatched(episodeId: String) {
+        val userId = auth.currentUser?.uid ?: return
+        val data = hashMapOf(
+            "timestamp" to System.currentTimeMillis(),
+            "episodeId" to episodeId
+        )
+        try {
+            db.collection("users").document(userId).collection("watched_episodes").document(episodeId).set(data).await()
+        } catch (e: Exception) {}
+    }
+
+    suspend fun isSubscribed(tvMazeId: String): Boolean {
+        val userId = auth.currentUser?.uid ?: return false
+        return try {
+            val doc = db.collection("users").document(userId).collection("subscriptions").document(tvMazeId).get().await()
+            doc.exists()
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun toggleSubscription(tvMazeId: String): Boolean {
+        val userId = auth.currentUser?.uid ?: return false
+        val docRef = db.collection("users").document(userId).collection("subscriptions").document(tvMazeId)
+        return try {
+            val doc = docRef.get().await()
+            if (doc.exists()) {
+                docRef.delete().await()
+                false
+            } else {
+                val data = hashMapOf(
+                    "showId" to tvMazeId,
+                    "addedAt" to System.currentTimeMillis()
+                )
+                docRef.set(data).await()
+                true
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun getSubscribedShows(): List<Show> {
+        val userId = auth.currentUser?.uid ?: return emptyList()
+
+        return try {
+            val snapshot = db.collection("users").document(userId).collection("subscriptions").get().await()
+            val showIds = snapshot.documents.map { it.id }
+
+            showIds.mapNotNull { id ->
+                try {
+                    val dto = tvMazeApi.getShowById(id)
+                    Show(
+                        id = dto.id.toString(),
+                        title = dto.name,
+                        imageUrl = dto.image?.medium ?: "",
+                        episode = "Subscribed",
+                        time = "",
+                        isNew = false,
+                        isWatched = false
+                    )
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 
@@ -44,18 +216,13 @@ class SeriesRepository {
         val today = java.time.LocalDate.now().toString()
 
         return try {
-            val snapshot = db.collection("users")
-                .document(userId)
-                .collection("subscriptions")
-                .get()
-                .await()
+            val snapshot = db.collection("users").document(userId).collection("subscriptions").get().await()
             val showIds = snapshot.documents.map { it.id }
 
             val upcomingShows = showIds.mapNotNull { id ->
                 try {
-                    val showDto = api.getShowById(id)
-                    val episodes = api.getShowEpisodes(id)
-
+                    val showDto = tvMazeApi.getShowById(id)
+                    val episodes = tvMazeApi.getShowEpisodes(id)
                     val nextEpisode = episodes.firstOrNull { it.airdate != null && it.airdate >= today }
 
                     if (nextEpisode != null) {
@@ -74,232 +241,6 @@ class SeriesRepository {
                 }
             }
             upcomingShows.sortedBy { it.time }
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
-    private suspend fun getWatchedEpisodeIdsFromFirebase(): Set<String> {
-        val userId = auth.currentUser?.uid ?: return emptySet()
-
-        return try {
-            val snapshot = db.collection("users")
-                .document(userId)
-                .collection("watched_episodes")
-                .get()
-                .await()
-
-            snapshot.documents.map { it.id }.toSet()
-        } catch (e: Exception) {
-            emptySet()
-        }
-    }
-
-    suspend fun markEpisodeAsWatched(episodeId: String) {
-        val userId = auth.currentUser?.uid ?: return
-
-        val data = hashMapOf(
-            "timestamp" to System.currentTimeMillis(),
-            "episodeId" to episodeId
-        )
-
-        try {
-            db.collection("users")
-                .document(userId)
-                .collection("watched_episodes")
-                .document(episodeId)
-                .set(data)
-                .await()
-        } catch (e: Exception) {
-            Log.e("PekRepo", "Failed to save to Firebase", e)
-        }
-    }
-
-    suspend fun searchSeries(query: String): List<SearchResponseItem> {
-        return NetworkClient.api.searchSeries(query)
-    }
-
-    suspend fun searchShows(query: String): List<Show> {
-        return try {
-            val searchResults = api.searchSeries(query)
-
-            searchResults.map { item ->
-                Show(
-                    id = item.show.id.toString(),
-                    title = item.show.name,
-                    imageUrl = item.show.image?.medium ?: "",
-                    episode = item.show.genres?.joinToString(", ") ?: "Search Result",
-                    time = item.show.premiered?.let { "Premiered: $it" } ?: "",
-                    isNew = false,
-                    isWatched = false
-                )
-            }
-        } catch (e: Exception) {
-            Log.e("PekRepo", "Filter error", e)
-            emptyList()
-        }
-    }
-
-    suspend fun getShowEpisodes(showId: String): List<Episode> {
-        return try {
-            val episodes = api.getShowEpisodes(showId)
-            episodes.reversed()
-        } catch (e: Exception) {
-            Log.e("PekRepo", "Error fetching show episodes", e)
-            emptyList()
-        }
-    }
-
-    suspend fun isSubscribed(showId: String): Boolean {
-        val userId = auth.currentUser?.uid ?: return false
-        return try {
-            val doc = db.collection("users")
-                .document(userId)
-                .collection("subscriptions")
-                .document(showId)
-                .get()
-                .await()
-            doc.exists()
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    suspend fun toggleSubscription(showId: String): Boolean {
-        val userId = auth.currentUser?.uid
-        Log.d("PekRepo", "Нажали подписку! showId: $showId, userId: $userId")
-
-        if (userId == null) {
-            Log.e("PekRepo", "ОШИБКА: Пользователь не авторизован (userId = null)!")
-            return false
-        }
-
-        val docRef = db.collection( "users")
-            .document(userId)
-            .collection("subscriptions")
-            .document(showId)
-
-        return try {
-            val doc = docRef.get().await()
-            if (doc.exists()) {
-                Log.d("PekRepo", "Сериал найден в базе, удаляем...")
-                docRef.delete().await()
-                Log.d("PekRepo", "Успешно удалено!")
-                false
-            } else {
-                Log.d("PekRepo", "Сериала нет в базе, добавляем...")
-                val data = hashMapOf(
-                    "showId" to showId,
-                    "addedAt" to System.currentTimeMillis()
-                )
-                docRef.set(data).await()
-                Log.d("PekRepo", "Успешно добавлено!")
-                true
-            }
-        } catch (e: Exception) {
-            Log.e("PekRepo", "ОШИБКА FIREBASE при записи/чтении", e)
-            false
-        }
-    }
-    suspend fun getSubscribedShows(): List<Show> {
-        val userId = auth.currentUser?.uid ?: return emptyList()
-
-        return try {
-            val snapshot = db.collection("users")
-                .document(userId)
-                .collection("subscriptions")
-                .get()
-                .await()
-
-            val showIds = snapshot.documents.map { it.id }
-
-            val shows = showIds.mapNotNull { id ->
-                try {
-                    val dto = api.getShowById(id)
-                    Show(
-                        id = dto.id.toString(),
-                        title = dto.name,
-                        imageUrl = dto.image?.medium ?: "",
-                        episode = "Subscribed",
-                        time = "",
-                        isNew = false,
-                        isWatched = false
-                    )
-                } catch (e: Exception) {
-                    null
-                }
-            }
-            shows
-        } catch (e: Exception) {
-            Log.e("PekRepo", "Ошибка при загрузке подписок", e)
-            emptyList()
-        }
-    }
-    // ПОПУЛЯРНОЕ СЕГОДНЯ (Сортируем по weight)
-    suspend fun getPopularToday(): List<Show> {
-        val today = java.time.LocalDate.now().toString()
-        return try {
-            val apiEpisodes = api.getSchedule(date = today)
-            val watchedIds = getWatchedEpisodeIdsFromFirebase()
-
-            // Сортируем по убыванию популярности (weight)
-            apiEpisodes.sortedByDescending { it.show.weight ?: 0 }.map { dto ->
-                Show(
-                    id = dto.show.id.toString(),
-                    title = dto.show.name,
-                    episode = "S${dto.season} • E${dto.number}",
-                    time = dto.airtime,
-                    imageUrl = dto.show.image?.medium ?: "",
-                    isNew = true,
-                    isWatched = watchedIds.contains(dto.id.toString())
-                )
-            }
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
-    // БУДУЩИЕ РЕЛИЗЫ (Завтрашние премьеры)
-    suspend fun getUpcomingPremieres(): List<Show> {
-        val tomorrow = java.time.LocalDate.now().plusDays(1).toString()
-        return try {
-            val apiEpisodes = api.getSchedule(date = tomorrow)
-            val watchedIds = getWatchedEpisodeIdsFromFirebase()
-
-            apiEpisodes.map { dto ->
-                Show(
-                    id = dto.show.id.toString(),
-                    title = dto.show.name,
-                    episode = "S${dto.season} • E${dto.number}",
-                    time = "Tomorrow, ${dto.airtime}",
-                    imageUrl = dto.show.image?.medium ?: "",
-                    isNew = false,
-                    isWatched = watchedIds.contains(dto.id.toString())
-                )
-            }
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
-    // АКТУАЛЬНОЕ (Вчерашние релизы)
-    suspend fun getRecentEpisodes(): List<Show> {
-        val yesterday = java.time.LocalDate.now().minusDays(1).toString()
-        return try {
-            val apiEpisodes = api.getSchedule(date = yesterday)
-            val watchedIds = getWatchedEpisodeIdsFromFirebase()
-
-            apiEpisodes.map { dto ->
-                Show(
-                    id = dto.show.id.toString(),
-                    title = dto.show.name,
-                    episode = "S${dto.season} • E${dto.number}",
-                    time = "Yesterday",
-                    imageUrl = dto.show.image?.medium ?: "",
-                    isNew = false,
-                    isWatched = watchedIds.contains(dto.id.toString())
-                )
-            }
         } catch (e: Exception) {
             emptyList()
         }

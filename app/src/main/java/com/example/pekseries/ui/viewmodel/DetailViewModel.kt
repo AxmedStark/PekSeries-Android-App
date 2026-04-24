@@ -2,6 +2,7 @@ package com.example.pekseries.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pekseries.data.remote.TmdbShowDetailDto
 import com.example.pekseries.data.repository.SeriesRepository
 import com.example.pekseries.model.Episode
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,31 +21,50 @@ class DetailViewModel : ViewModel() {
 
     private val _isSubscribed = MutableStateFlow(false)
     val isSubscribed: StateFlow<Boolean> = _isSubscribed.asStateFlow()
-    private val _showDetails = MutableStateFlow<com.example.pekseries.data.remote.TvMazeShowDto?>(null)
-    val showDetails: StateFlow<com.example.pekseries.data.remote.TvMazeShowDto?> = _showDetails.asStateFlow()
 
+    // Модель из TMDB для красивого отображения постеров и описания
+    private val _showDetails = MutableStateFlow<TmdbShowDetailDto?>(null)
+    val showDetails: StateFlow<TmdbShowDetailDto?> = _showDetails.asStateFlow()
+
+    // Скрытая переменная: храним TVMaze ID для подписок и серий
+    private var currentTvMazeId: String? = null
+
+    // showId здесь — это TMDB ID, который пришел с Главной страницы или Поиска
     fun loadEpisodes(showId: String) {
         viewModelScope.launch {
             _isLoading.value = true
 
-            try {
-                _showDetails.value = com.example.pekseries.data.NetworkClient.api.getShowById(showId)
-            } catch (e: Exception) {
-                _showDetails.value = null
+            // 1. Сначала качаем красивые детали из TMDB (описание, постеры, IMDB ID)
+            _showDetails.value = repository.getShowDetails(showId)
+
+            // 2. Идем по мосту: просим Репозиторий найти TVMaze ID по этому TMDB ID
+            currentTvMazeId = repository.getTvMazeId(showId)
+
+            if (currentTvMazeId != null) {
+                // 3. Ура, мост сработал! Проверяем подписку по TVMaze ID
+                _isSubscribed.value = repository.isSubscribed(currentTvMazeId!!)
+
+                // 4. Качаем список серий из TVMaze
+                val result = repository.getShowEpisodes(currentTvMazeId!!)
+                _episodes.value = result
+            } else {
+                // Если у сериала вдруг нет IMDB ID (очень редкий случай для старых шоу)
+                _episodes.value = emptyList()
+                _isSubscribed.value = false
             }
 
-            val result = repository.getShowEpisodes(showId)
-            _isSubscribed.value = repository.isSubscribed(showId)
-
-            _episodes.value = result
             _isLoading.value = false
         }
     }
 
-    fun toggleSubscription(showId: String) {
+    // Обрати внимание: мы больше не передаем сюда showId из UI!
+    // ViewModel сама знает, какой TVMaze ID использовать.
+    fun toggleSubscription() {
         viewModelScope.launch {
-            val newState = repository.toggleSubscription(showId)
-            _isSubscribed.value = newState
+            currentTvMazeId?.let { mazeId ->
+                val newState = repository.toggleSubscription(mazeId)
+                _isSubscribed.value = newState
+            }
         }
     }
 }

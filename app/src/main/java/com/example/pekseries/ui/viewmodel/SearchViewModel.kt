@@ -2,7 +2,7 @@ package com.example.pekseries.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pekseries.model.SearchResponseItem
+import com.example.pekseries.model.Show
 import com.example.pekseries.data.repository.SeriesRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -17,8 +17,8 @@ class SearchViewModel : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
-    private val _searchResults = MutableStateFlow<List<SearchResponseItem>>(emptyList())
-    val searchResults: StateFlow<List<SearchResponseItem>> = _searchResults
+    private val _searchResults = MutableStateFlow<List<Show>>(emptyList())
+    val searchResults: StateFlow<List<Show>> = _searchResults
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -35,7 +35,7 @@ class SearchViewModel : ViewModel() {
             if (query.length > 2) {
                 _isLoading.value = true
                 try {
-                    val results = repository.searchSeries(query)
+                    val results = repository.searchShows(query)
                     _searchResults.value = results
                 } catch (e: Exception) {
                     _searchResults.value = emptyList()

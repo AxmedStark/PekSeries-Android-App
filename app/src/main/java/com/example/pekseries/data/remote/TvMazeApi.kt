@@ -7,6 +7,17 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface TvMazeApi {
+
+    // ==========================================
+    // НАШ МОСТ: Поиск сериала по IMDB ID
+    // ==========================================
+    @GET("lookup/shows")
+    suspend fun getTvMazeShowByImdb(@Query("imdb") imdbId: String): TvMazeShowDto
+
+    // ==========================================
+    // СТАРЫЕ ФУНКЦИИ (Для работы Подписок/Watchlist)
+    // ==========================================
+
     @GET("schedule")
     suspend fun getSchedule(
         @Query("country") country: String = "US",
@@ -25,13 +36,17 @@ interface TvMazeApi {
     suspend fun getShowById(@Path("id") showId: String): TvMazeShowDto
 }
 
+// ==========================================
+// МОДЕЛИ ДАННЫХ ДЛЯ TVMAZE
+// ==========================================
+
 data class TvMazeEpisodeDto(
     val id: Int,
     val name: String,
     val season: Int,
     val number: Int,
-    val airdate: String,
-    val airtime: String,
+    val airdate: String?,
+    val airtime: String?,
     val show: TvMazeShowDto
 )
 
@@ -46,10 +61,9 @@ data class TvMazeShowDto(
     val weight: Int? = 0,
     val type: String? = null
 )
-//
+
 data class TvMazeRatingDto(
-    val average: Double?,
-    val tempvar: String?
+    val average: Double?
 )
 
 data class TvMazeImageDto(

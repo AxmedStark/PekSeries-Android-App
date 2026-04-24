@@ -84,7 +84,7 @@ fun DetailScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Button(
-                            onClick = { viewModel.toggleSubscription(showId) },
+                            onClick = { viewModel.toggleSubscription() },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (isSubscribed) Color.DarkGray else Primary,
                                 contentColor = if (isSubscribed) Primary else DarkBg
@@ -100,9 +100,9 @@ fun DetailScreen(
                         Spacer(modifier = Modifier.height(24.dp))
 
                         if (showDetails != null) {
-                            val cleanSummary = showDetails!!.summary?.replace(Regex("<.*?>"), "") ?: "No description available."
-                            val rating = showDetails!!.rating?.average?.let { "$it ⭐" } ?: "No rating"
-                            val genres = showDetails!!.genres?.joinToString(", ") ?: ""
+                            val cleanSummary = showDetails!!.overview?.replace(Regex("<.*?>"), "") ?: "No description available."
+                            val rating = showDetails!!.vote_average?.let { "$it ⭐" } ?: "No rating"
+                            val genres = showDetails!!.genres?.joinToString(", ") { it.name } ?: ""
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -129,7 +129,7 @@ fun DetailScreen(
                                 )
 
                                 AsyncImage(
-                                    model = showDetails!!.image?.medium ?: showDetails!!.image?.original,
+                                    model = showDetails!!.getFullPosterUrl(),
                                     contentDescription = "Poster",
                                     modifier = Modifier
                                         .width(110.dp)
@@ -217,7 +217,7 @@ fun DetailScreen(
                     .background(Color.Black)
             ) {
                 AsyncImage(
-                    model = showDetails!!.image?.original ?: showDetails!!.image?.medium,
+                    model = showDetails!!.getFullPosterUrl(),
                     contentDescription = "Full Screen Poster",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit
