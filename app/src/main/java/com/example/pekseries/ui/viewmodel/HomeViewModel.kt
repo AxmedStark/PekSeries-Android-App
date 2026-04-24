@@ -21,42 +21,65 @@ class HomeViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    private var currentFilter: String = "Airing Today"
+    // Официальные ID жанров TMDB для TV-шоу
+    private val genreMap = mapOf(
+        "Боевик / Приключения" to "10759",
+        "Анимация / Аниме" to "16",
+        "Комедия" to "35",
+        "Криминал" to "80",
+        "Документальный" to "99",
+        "Драма" to "18",
+        "Семейный" to "10751",
+        "Фантастика" to "10765",
+        "Детектив" to "9648",
+        "Реалити" to "10764",
+        "Ток-шоу" to "10767",
+        "Вестерн" to "10770"
+    )
+
+    // Официальные типы контента TMDB
+    private val typeMap = mapOf(
+        "Игровой сериал" to "4",
+        "Мини-сериал" to "2",
+        "Документальный" to "0",
+        "Реалити-шоу" to "3",
+        "Ток-шоу" to "5",
+        "Новости" to "1"
+    )
 
     init {
-        loadEpisodes(currentFilter)
+        loadEpisodes("Actual")
     }
 
-    fun loadEpisodes(filterCategory: String = "Actual", query: String = "") {
+    fun loadEpisodes(filterCategory: String = "Actual") {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
                 val shows = when (filterCategory) {
-                    "Popular" -> repository.getPopularToday()
-                    "Upcoming" -> repository.getUpcomingPremieres()
-                    "Actual" -> repository.getTodayEpisodes()
-                    "Genre", "Type", "Year" -> repository.searchShows(query)
+                    "Популярное", "Popular" -> repository.getPopularToday()
+                    "Будущие", "Upcoming" -> repository.getUpcomingPremieres()
+                    "Актуальное", "Actual" -> repository.getTodayEpisodes()
                     else -> repository.getTodayEpisodes()
                 }
                 _uiState.value = HomeUiState.Success(shows)
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error("Load error: ${e.message}")
+                _uiState.value = HomeUiState.Error("Ошибка загрузки: ${e.message}")
             }
         }
     }
 
-    fun toggleWatched(show: Show) {
+    fun applyFilters(genre: String, type: String, year: String) {
         viewModelScope.launch {
-            val currentState = _uiState.value
-            if (currentState is HomeUiState.Success) {
-                val updatedList = currentState.shows.map {
-                    if (it.id == show.id) it.copy(isWatched = !it.isWatched) else it
-                }
-                _uiState.value = HomeUiState.Success(updatedList)
-            }
+            _uiState.value = HomeUiState.Loading
+            try {
+                val genreId = if (genre == "Все" || genre == "Жанр") null else genreMap[genre]
+                val typeId = if (type == "Все" || type == "Тип") null else typeMap[type]
+                val yearQuery = if (year == "Все" || year == "Год") null else year
 
-            if (!show.isWatched) {
-                repository.markEpisodeAsWatched(show.id)
+                val shows = repository.discoverShows(genreId, yearQuery, typeId)
+                _uiState.value = HomeUiState.Success(shows)
+            } catch (e: Exception) {
+                _uiState.value = HomeUiState.Error("Ошибка фильтрации: ${e.message}")
             }
         }
     }
