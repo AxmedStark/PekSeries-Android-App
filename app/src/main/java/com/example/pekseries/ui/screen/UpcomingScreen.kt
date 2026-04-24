@@ -80,6 +80,10 @@ fun UpcomingContent(
     val todayEpisodes by viewModel.todayEpisodes.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
+    LaunchedEffect(Unit) {
+        viewModel.loadTodayEpisodes()
+    }
+
     if (isLoading && todayEpisodes.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = Primary)

@@ -27,7 +27,7 @@ class WatchlistViewModel : ViewModel() {
         loadTodayEpisodes()
     }
 
-    private fun loadTodayEpisodes() {
+    fun loadTodayEpisodes() {
         viewModelScope.launch {
             _isLoading.value = true
             _todayEpisodes.value = repository.getUpcomingSubscribedEpisodes()
