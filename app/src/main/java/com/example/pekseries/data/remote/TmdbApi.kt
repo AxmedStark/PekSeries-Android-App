@@ -6,28 +6,24 @@ import retrofit2.http.Query
 
 interface TmdbApi {
 
-    // Актуальное (сегодня в эфире)
     @GET("tv/airing_today")
     suspend fun getAiringToday(
         @Query("api_key") apiKey: String,
         @Query("language") language: String = "en-US"
     ): TmdbResponse
 
-    // Популярное (тренды дня)
     @GET("trending/tv/day")
     suspend fun getTrending(
         @Query("api_key") apiKey: String,
         @Query("language") language: String = "en-US"
     ): TmdbResponse
 
-    // Будущие / Сейчас в эфире
     @GET("tv/on_the_air")
     suspend fun getOnTheAir(
         @Query("api_key") apiKey: String,
         @Query("language") language: String = "en-US"
     ): TmdbResponse
 
-    // Умный поиск (Для фильтров Жанр/Год/Тип)
     @GET("discover/tv")
     suspend fun discoverShows(
         @Query("api_key") apiKey: String,
@@ -38,7 +34,6 @@ interface TmdbApi {
         @Query("sort_by") sortBy: String = "popularity.desc"
     ): TmdbResponse
 
-    // Поиск по названию (Для экрана SearchScreen)
     @GET("search/tv")
     suspend fun searchSeries(
         @Query("api_key") apiKey: String,
@@ -46,7 +41,6 @@ interface TmdbApi {
         @Query("language") language: String = "en-US"
     ): TmdbResponse
 
-    // Детали сериала (С трейлерами и IMDB ID для моста с TVMaze)
     @GET("tv/{series_id}")
     suspend fun getShowDetails(
         @Path("series_id") showId: String,
@@ -55,7 +49,6 @@ interface TmdbApi {
         @Query("append_to_response") append: String = "videos,external_ids"
     ): TmdbShowDetailDto
 
-    // Список серий конкретного сезона
     @GET("tv/{series_id}/season/{season_number}")
     suspend fun getSeasonEpisodes(
         @Path("series_id") showId: String,
@@ -71,10 +64,6 @@ interface TmdbApi {
         @Query("external_source") externalSource: String = "imdb_id"
     ): TmdbFindResponse
 }
-
-// ==========================================
-// МОДЕЛИ ДАННЫХ ДЛЯ СПИСКОВ (Главная / Поиск)
-// ==========================================
 
 data class TmdbResponse(
     val results: List<TmdbShowDto>
@@ -93,10 +82,6 @@ data class TmdbShowDto(
         return if (poster_path != null) "https://image.tmdb.org/t/p/w500$poster_path" else ""
     }
 }
-
-// ==========================================
-// МОДЕЛИ ДАННЫХ ДЛЯ ЭКРАНА ДЕТАЛЕЙ И МОСТА
-// ==========================================
 
 data class TmdbShowDetailDto(
     val id: Int,

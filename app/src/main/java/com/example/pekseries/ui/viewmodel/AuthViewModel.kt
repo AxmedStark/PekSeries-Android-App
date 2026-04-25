@@ -26,6 +26,7 @@ class AuthViewModel : ViewModel() {
                 _error.value = "Google Auth Error: ${e.localizedMessage}"
             }
     }
+
     fun login(email: String, pass: String) {
         auth.signInWithEmailAndPassword(email, pass)
             .addOnSuccessListener {

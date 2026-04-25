@@ -25,10 +25,8 @@ class SearchViewModel : ViewModel() {
 
     fun onQueryChange(query: String) {
         _searchQuery.value = query
-
         searchJob?.cancel()
 
-        // 2. Запускаем новый таймер
         searchJob = viewModelScope.launch {
             delay(500)
 

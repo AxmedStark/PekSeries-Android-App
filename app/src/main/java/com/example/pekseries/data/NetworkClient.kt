@@ -6,7 +6,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object NetworkClient {
-    // TMDB api for categories, search and trailer
     val tmdbApi: TmdbApi by lazy {
         Retrofit.Builder()
             .baseUrl("https://api.themoviedb.org/3/")
@@ -15,7 +14,6 @@ object NetworkClient {
             .create(TmdbApi::class.java)
     }
 
-    // TvMaze api for subscriptions, schedule and api bridge
     val tvMazeApi: TvMazeApi by lazy {
         Retrofit.Builder()
             .baseUrl("https://api.tvmaze.com/")
