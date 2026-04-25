@@ -26,6 +26,7 @@ import com.example.pekseries.model.Show
 import com.example.pekseries.ui.theme.*
 import com.example.pekseries.ui.viewmodel.HomeUiState
 import com.example.pekseries.ui.viewmodel.HomeViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun HomeScreen(
@@ -34,21 +35,24 @@ fun HomeScreen(
     onNavigateToNotifications: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val userName = currentUser?.displayName?.split(" ")?.firstOrNull() ?: "User"
+    val photoUrl = currentUser?.photoUrl
 
-    val mainFilters = listOf("Актуальное", "Популярное", "Будущие")
+    val mainFilters = listOf("Airing Now", "Popular", "Upcoming")
     var selectedMainFilter by remember { mutableStateOf(mainFilters.first()) }
 
-    val genresList = listOf("Жанр", "Боевик / Приключения", "Анимация / Аниме", "Комедия", "Криминал", "Документальный", "Драма", "Семейный", "Фантастика", "Детектив", "Реалити", "Ток-шоу")
+    val genresList = listOf("Genre", "Action & Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Family", "Sci-Fi & Fantasy", "Mystery", "Reality", "Talk", "Western")
     var genreExpanded by remember { mutableStateOf(false) }
-    var selectedGenre by remember { mutableStateOf("Жанр") }
+    var selectedGenre by remember { mutableStateOf("Genre") }
 
-    val typesList = listOf("Тип", "Игровой сериал", "Мини-сериал", "Документальный", "Реалити-шоу", "Ток-шоу")
+    val typesList = listOf("Type", "Scripted", "Miniseries", "Documentary", "Reality", "Talk Show", "News")
     var typeExpanded by remember { mutableStateOf(false) }
-    var selectedType by remember { mutableStateOf("Тип") }
+    var selectedType by remember { mutableStateOf("Type") }
 
-    val yearsList = listOf("Год") + (2026 downTo 1990).map { it.toString() }
+    val yearsList = listOf("Year") + (2026 downTo 1990).map { it.toString() }
     var yearExpanded by remember { mutableStateOf(false) }
-    var selectedYear by remember { mutableStateOf("Год") }
+    var selectedYear by remember { mutableStateOf("Year") }
 
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         item {
@@ -58,12 +62,26 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.Gray))
+                    Box(
+                        modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.DarkGray),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (photoUrl != null) {
+                            AsyncImage(
+                                model = photoUrl,
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(Icons.Filled.Person, null, tint = Color.Gray, modifier = Modifier.size(24.dp))
+                        }
+                    }
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text("Hello, Ahmad", color = Primary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text("Hello, $userName", color = Primary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 }
                 IconButton(onClick = onNavigateToNotifications) {
-                    Icon(Icons.Filled.Notifications, "Notify", tint = Color.White)
+                    Icon(Icons.Filled.Notifications, null, tint = Color.White)
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
@@ -76,7 +94,7 @@ fun HomeScreen(
                         selected = selectedMainFilter == filter,
                         onClick = {
                             selectedMainFilter = filter
-                            selectedGenre = "Жанр"; selectedType = "Тип"; selectedYear = "Год"
+                            selectedGenre = "Genre"; selectedType = "Type"; selectedYear = "Year"
                             viewModel.loadEpisodes(filterCategory = filter)
                         },
                         label = { Text(filter) },
@@ -98,29 +116,29 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     item {
-                        DropdownFilter("Жанр", selectedGenre, genresList, genreExpanded, { genreExpanded = it }) {
+                        DropdownFilter("Genre", selectedGenre, genresList, genreExpanded, { genreExpanded = it }) {
                             selectedGenre = it; selectedMainFilter = ""; viewModel.applyFilters(selectedGenre, selectedType, selectedYear)
                         }
                     }
                     item {
-                        DropdownFilter("Тип", selectedType, typesList, typeExpanded, { typeExpanded = it }) {
+                        DropdownFilter("Type", selectedType, typesList, typeExpanded, { typeExpanded = it }) {
                             selectedType = it; selectedMainFilter = ""; viewModel.applyFilters(selectedGenre, selectedType, selectedYear)
                         }
                     }
                     item {
-                        DropdownFilter("Год", selectedYear, yearsList, yearExpanded, { yearExpanded = it }) {
+                        DropdownFilter("Year", selectedYear, yearsList, yearExpanded, { yearExpanded = it }) {
                             selectedYear = it; selectedMainFilter = ""; viewModel.applyFilters(selectedGenre, selectedType, selectedYear)
                         }
                     }
                 }
 
-                if (selectedGenre != "Жанр" || selectedType != "Тип" || selectedYear != "Год") {
+                if (selectedGenre != "Genre" || selectedType != "Type" || selectedYear != "Year") {
                     IconButton(onClick = {
-                        selectedGenre = "Жанр"; selectedType = "Тип"; selectedYear = "Год"
-                        selectedMainFilter = "Актуальное"
-                        viewModel.loadEpisodes("Actual")
+                        selectedGenre = "Genre"; selectedType = "Type"; selectedYear = "Year"
+                        selectedMainFilter = "Airing Now"
+                        viewModel.loadEpisodes("Airing Now")
                     }) {
-                        Icon(Icons.Default.Clear, "Reset", tint = Color.Gray)
+                        Icon(Icons.Default.Clear, null, tint = Color.Gray)
                     }
                 }
             }
@@ -133,10 +151,10 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val headerText = if (selectedMainFilter.isNotEmpty()) selectedMainFilter else "Результаты"
+                val headerText = if (selectedMainFilter.isNotEmpty()) selectedMainFilter else "Results"
                 Text(headerText, color = Primary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 IconButton(onClick = { viewModel.loadEpisodes(selectedMainFilter) }) {
-                    Icon(Icons.Default.Refresh, "Refresh", tint = Primary)
+                    Icon(Icons.Default.Refresh, null, tint = Primary)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -151,7 +169,7 @@ fun HomeScreen(
             is HomeUiState.Error -> item { Text(state.message, color = Primary) }
             is HomeUiState.Success -> {
                 if (state.shows.isEmpty()) {
-                    item { Text("Ничего не найдено 😔", color = Color.Gray) }
+                    item { Text("Nothing found", color = Color.Gray) }
                 } else {
                     items(state.shows) { show ->
                         HomeShowCard(show = show, onCardClick = { onNavigateToDetail(show.id) })
@@ -179,7 +197,11 @@ fun DropdownFilter(
             label = { Text(selected) },
             trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) }
         )
-        DropdownMenu(expanded = expanded, onDismissRequest = { onExpandedChange(false) }) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { onExpandedChange(false) },
+            modifier = Modifier.heightIn(max = 240.dp)
+        ) {
             options.forEach { option ->
                 DropdownMenuItem(text = { Text(option) }, onClick = { onSelect(option); onExpandedChange(false) })
             }
@@ -206,7 +228,7 @@ fun HomeShowCard(show: Show, onCardClick: () -> Unit) {
         )
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            if (show.isNew) Text("AIRED TODAY", color = Primary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            //if (show.isNew) Text("AIRED TODAY", color = Primary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             Text(show.title, color = PekYellow, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Text(show.episode ?: "", color = TextPrimary, fontSize = 12.sp)
             Spacer(modifier = Modifier.height(4.dp))

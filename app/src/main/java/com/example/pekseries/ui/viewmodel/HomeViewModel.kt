@@ -22,46 +22,46 @@ class HomeViewModel : ViewModel() {
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private val genreMap = mapOf(
-        "Боевик / Приключения" to "10759",
-        "Анимация / Аниме" to "16",
-        "Комедия" to "35",
-        "Криминал" to "80",
-        "Документальный" to "99",
-        "Драма" to "18",
-        "Семейный" to "10751",
-        "Фантастика" to "10765",
-        "Детектив" to "9648",
-        "Реалити" to "10764",
-        "Ток-шоу" to "10767",
-        "Вестерн" to "10770"
+        "Action & Adventure" to "10759",
+        "Animation" to "16",
+        "Comedy" to "35",
+        "Crime" to "80",
+        "Documentary" to "99",
+        "Drama" to "18",
+        "Family" to "10751",
+        "Sci-Fi & Fantasy" to "10765",
+        "Mystery" to "9648",
+        "Reality" to "10764",
+        "Talk" to "10767",
+        "Western" to "10770"
     )
 
     private val typeMap = mapOf(
-        "Игровой сериал" to "4",
-        "Мини-сериал" to "2",
-        "Документальный" to "0",
-        "Реалити-шоу" to "3",
-        "Ток-шоу" to "5",
-        "Новости" to "1"
+        "Scripted" to "4",
+        "Miniseries" to "2",
+        "Documentary" to "0",
+        "Reality" to "3",
+        "Talk Show" to "5",
+        "News" to "1"
     )
 
     init {
-        loadEpisodes("Actual")
+        loadEpisodes("Airing Today")
     }
 
-    fun loadEpisodes(filterCategory: String = "Actual") {
+    fun loadEpisodes(filterCategory: String = "Airing Today") {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
                 val shows = when (filterCategory) {
-                    "Популярное", "Popular" -> repository.getPopularToday()
-                    "Будущие", "Upcoming" -> repository.getUpcomingPremieres()
-                    "Актуальное", "Actual" -> repository.getTodayEpisodes()
+                    "Popular" -> repository.getPopularToday()
+                    "Upcoming" -> repository.getUpcomingPremieres()
+                    "Airing Today" -> repository.getTodayEpisodes()
                     else -> repository.getTodayEpisodes()
                 }
                 _uiState.value = HomeUiState.Success(shows)
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error("Ошибка загрузки: ${e.message}")
+                _uiState.value = HomeUiState.Error("Error: ${e.message}")
             }
         }
     }
@@ -70,14 +70,14 @@ class HomeViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                val genreId = if (genre == "Все" || genre == "Жанр") null else genreMap[genre]
-                val typeId = if (type == "Все" || type == "Тип") null else typeMap[type]
-                val yearQuery = if (year == "Все" || year == "Год") null else year
+                val genreId = if (genre == "All" || genre == "Genre") null else genreMap[genre]
+                val typeId = if (type == "All" || type == "Type") null else typeMap[type]
+                val yearQuery = if (year == "All" || year == "Year") null else year
 
                 val shows = repository.discoverShows(genreId, yearQuery, typeId)
                 _uiState.value = HomeUiState.Success(shows)
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error("Ошибка фильтрации: ${e.message}")
+                _uiState.value = HomeUiState.Error("Filter error: ${e.message}")
             }
         }
     }

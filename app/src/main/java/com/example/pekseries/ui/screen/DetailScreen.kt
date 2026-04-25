@@ -30,6 +30,7 @@ import com.example.pekseries.model.Episode
 import com.example.pekseries.ui.theme.DarkBg
 import com.example.pekseries.ui.theme.Primary
 import com.example.pekseries.ui.viewmodel.DetailViewModel
+import java.util.Locale
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -71,7 +72,7 @@ fun DetailScreen(
                     if (isLoading) {
                         CircularProgressIndicator(color = Primary, modifier = Modifier.align(Alignment.Center))
                     } else {
-                        Text("Трейлер не найден \uD83D\uDE14", color = Color.Gray, modifier = Modifier.align(Alignment.Center))
+                        Text("Trailer not found", color = Color.Gray, modifier = Modifier.align(Alignment.Center))
                     }
                 }
             }
@@ -81,7 +82,7 @@ fun DetailScreen(
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = onBackClick) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Color.White)
                             }
                             Text("Series Info", color = Primary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         }
@@ -108,7 +109,7 @@ fun DetailScreen(
                                 colors = CardDefaults.cardColors(containerColor = Color.DarkGray.copy(alpha = 0.5f))
                             ) {
                                 Text(
-                                    text = "Отслеживание серий и подписка недоступны для этого шоу (Нет в базе трекинга)",
+                                    text = "Tracking and subscriptions are unavailable for this show (Not in tracking database).",
                                     color = Color.LightGray,
                                     modifier = Modifier.padding(16.dp),
                                     fontSize = 13.sp
@@ -120,15 +121,28 @@ fun DetailScreen(
 
                         if (showDetails != null) {
                             val cleanSummary = showDetails!!.overview?.replace(Regex("<.*?>"), "") ?: "No description available."
-                            val rating = showDetails!!.vote_average?.let { "$it ⭐" } ?: "No rating"
+                            val rating = showDetails!!.vote_average?.let { String.format(Locale.US, "%.1f", it) + " ⭐" } ?: "No rating"
                             val genres = showDetails!!.genres?.joinToString(", ") { it.name } ?: ""
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Top
                             ) {
-                                Text(text = genres, color = Primary, fontSize = 14.sp)
-                                Text(text = rating, color = Color.Yellow, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text(
+                                    text = genres,
+                                    color = Primary,
+                                    fontSize = 14.sp,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Text(
+                                    text = rating,
+                                    color = Color.Yellow,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1
+                                )
                             }
 
                             Spacer(modifier = Modifier.height(16.dp))
@@ -149,7 +163,7 @@ fun DetailScreen(
 
                                 AsyncImage(
                                     model = showDetails!!.getFullPosterUrl(),
-                                    contentDescription = "Poster",
+                                    contentDescription = null,
                                     modifier = Modifier
                                         .width(110.dp)
                                         .height(160.dp)
@@ -182,7 +196,7 @@ fun DetailScreen(
                         Text("Episodes (${episodes.size})", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         Icon(
                             imageVector = if (isEpisodesExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                            contentDescription = "Toggle",
+                            contentDescription = null,
                             tint = Color.White
                         )
                     }
@@ -237,7 +251,7 @@ fun DetailScreen(
             ) {
                 AsyncImage(
                     model = showDetails!!.getFullPosterUrl(),
-                    contentDescription = "Full Screen Poster",
+                    contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit
                 )
@@ -250,7 +264,7 @@ fun DetailScreen(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Close",
+                        contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(32.dp)
                     )

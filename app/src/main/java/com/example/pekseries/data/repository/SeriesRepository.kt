@@ -12,6 +12,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import java.util.Locale
 
 class SeriesRepository {
     private val tmdbApi = NetworkClient.tmdbApi
@@ -32,8 +33,8 @@ class SeriesRepository {
                         Show(
                             id = dto.id.toString(),
                             title = dto.name,
-                            episode = dto.first_air_date?.let { "Premiere: $it" } ?: "TMDB",
-                            time = dto.vote_average?.let { "Rating: ★ $it" } ?: "",
+                            episode = dto.first_air_date?.let { "Released: $it" } ?: "TMDB",
+                            time = dto.vote_average?.let { String.format(Locale.US, "Rating: ★ %.1f", it) } ?: "",
                             imageUrl = dto.getFullPosterUrl(),
                             isNew = isNew,
                             isWatched = watchedIds.contains(mazeId)
@@ -83,7 +84,7 @@ class SeriesRepository {
                     title = item.show.name,
                     imageUrl = item.show.image?.medium ?: "",
                     episode = item.show.genres?.joinToString(", ") ?: "TV Show",
-                    time = item.show.premiered?.let { "Премьера: $it" } ?: "",
+                    time = item.show.premiered?.let { "Premiere: $it" } ?: "",
                     isNew = false,
                     isWatched = false
                 )
