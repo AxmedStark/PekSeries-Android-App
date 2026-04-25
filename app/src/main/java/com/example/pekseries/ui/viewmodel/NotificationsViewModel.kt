@@ -18,4 +18,11 @@ class NotificationsViewModel : ViewModel() {
             _notifications.value = repository.getNotifications()
         }
     }
+
+    fun clearNotifications() {
+        viewModelScope.launch {
+            repository.clearNotifications()
+            _notifications.value = emptyList()
+        }
+    }
 }

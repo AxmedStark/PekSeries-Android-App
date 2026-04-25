@@ -28,15 +28,11 @@ class DetailViewModel : ViewModel() {
     private val _showDetails = MutableStateFlow<TmdbShowDetailDto?>(null)
     val showDetails: StateFlow<TmdbShowDetailDto?> = _showDetails.asStateFlow()
 
-    private val _trailerKey = MutableStateFlow<String?>(null)
-    val trailerKey: StateFlow<String?> = _trailerKey.asStateFlow()
-
     private var currentTvMazeId: String? = null
 
     fun loadEpisodes(passedId: String) {
         viewModelScope.launch {
             _showDetails.value = null
-            _trailerKey.value = null
             _episodes.value = emptyList()
             _isSubscribed.value = false
             _canSubscribe.value = false
@@ -55,10 +51,6 @@ class DetailViewModel : ViewModel() {
             if (tmdbId != null) {
                 val details = repository.getShowDetails(tmdbId)
                 _showDetails.value = details
-
-                _trailerKey.value = details?.videos?.results?.firstOrNull {
-                    it.site == "YouTube" && it.type == "Trailer"
-                }?.key ?: details?.videos?.results?.firstOrNull { it.site == "YouTube" }?.key
 
                 if (mazeId == null) {
                     mazeId = repository.findTvMazeId(details)

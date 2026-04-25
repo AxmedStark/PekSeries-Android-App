@@ -21,7 +21,8 @@ data class Episode(
     val name: String,
     val season: Int,
     val number: Int,
-    val airdate: String? = null
+    val airdate: String? = null,
+    val airstamp: String? = null
 )
 
 data class SearchResponseItem(

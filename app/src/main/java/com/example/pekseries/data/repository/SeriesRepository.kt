@@ -12,6 +12,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import java.text.SimpleDateFormat
 import java.util.Locale
 
 class SeriesRepository {
@@ -33,7 +34,7 @@ class SeriesRepository {
                         Show(
                             id = dto.id.toString(),
                             title = dto.name,
-                            episode = dto.first_air_date?.let { "Released: $it" } ?: "TMDB",
+                            episode = dto.first_air_date?.let { "Premiere: $it" } ?: "TMDB",
                             time = dto.vote_average?.let { String.format(Locale.US, "Rating: ★ %.1f", it) } ?: "",
                             imageUrl = dto.getFullPosterUrl(),
                             isNew = isNew,
@@ -257,7 +258,7 @@ class SeriesRepository {
                             id = "tvmaze_$id",
                             title = showDto.name,
                             imageUrl = showDto.image?.medium ?: "",
-                            episode = "S${nextEpisode.season} • E${nextEpisode.number} - ${nextEpisode.name}",
+                            episode = "S${nextEpisode.season} E${nextEpisode.number} - ${nextEpisode.name}",
                             time = nextEpisode.airdate ?: "",
                             isNew = false,
                             isWatched = false
@@ -268,6 +269,58 @@ class SeriesRepository {
                 }
             }
             upcomingShows.sortedBy { it.time }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    data class EpisodeNotificationData(
+        val episodeId: String,
+        val showTitle: String,
+        val episodeString: String
+    )
+
+    suspend fun getNewlyAiredEpisodesToNotify(notifiedIds: Set<String>): List<EpisodeNotificationData> {
+        val userId = auth.currentUser?.uid ?: return emptyList()
+        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US)
+        val now = System.currentTimeMillis()
+        val timeWindow = 172800000L
+
+        return try {
+            val snapshot = db.collection("users").document(userId).collection("subscriptions").get().await()
+            val showIds = snapshot.documents.map { it.id }
+            val newEpisodes = mutableListOf<EpisodeNotificationData>()
+
+            for (id in showIds) {
+                try {
+                    val showDto = tvMazeApi.getShowById(id)
+                    val episodes = tvMazeApi.getShowEpisodes(id)
+
+                    val justAired = episodes.filter { ep ->
+                        if (notifiedIds.contains(ep.id)) {
+                            false
+                        } else if (ep.airstamp != null) {
+                            try {
+                                val airTimeMs = sdf.parse(ep.airstamp)?.time ?: Long.MAX_VALUE
+                                airTimeMs <= now && airTimeMs > (now - timeWindow)
+                            } catch (e: Exception) { false }
+                        } else {
+                            false
+                        }
+                    }
+
+                    justAired.forEach { ep ->
+                        newEpisodes.add(
+                            EpisodeNotificationData(
+                                episodeId = ep.id,
+                                showTitle = showDto.name,
+                                episodeString = "S${ep.season} E${ep.number} - ${ep.name}"
+                            )
+                        )
+                    }
+                } catch (e: Exception) {}
+            }
+            newEpisodes
         } catch (e: Exception) {
             emptyList()
         }
@@ -301,5 +354,13 @@ class SeriesRepository {
                 .get().await()
             snapshot.toObjects(PekNotification::class.java)
         } catch (e: Exception) { emptyList() }
+    }
+
+    suspend fun clearNotifications() {
+        val userId = auth.currentUser?.uid ?: return
+        try {
+            val snapshot = db.collection("users").document(userId).collection("notifications").get().await()
+            snapshot.documents.forEach { it.reference.delete() }
+        } catch (e: Exception) {}
     }
 }

@@ -19,17 +19,26 @@ class NewEpisodeWorker(
 
     override suspend fun doWork(): Result {
         val repository = SeriesRepository()
+        val prefs = appContext.getSharedPreferences("pek_notifications", Context.MODE_PRIVATE)
+        val notifiedIds = prefs.getStringSet("notified_episodes", mutableSetOf()) ?: mutableSetOf()
 
         return try {
-            val upcoming = repository.getUpcomingSubscribedEpisodes()
-            val today = java.time.LocalDate.now().toString()
+            val newlyAired = repository.getNewlyAiredEpisodesToNotify(notifiedIds)
 
-            val outToday = upcoming.filter { it.time == today }
+            if (newlyAired.isNotEmpty()) {
+                val newNotifiedIds = notifiedIds.toMutableSet()
 
-            if (outToday.isNotEmpty()) {
-                val names = outToday.joinToString(", ") { it.title }
-                repository.saveNotification("New episodes today!", names)
-                sendNotification("Premiere today! \uD83C\uDF7F", names)
+                for (item in newlyAired) {
+                    val title = "New episode: ${item.showTitle}"
+                    val message = item.episodeString
+
+                    repository.saveNotification(title, message)
+                    sendNotification(title, message, item.episodeId.hashCode())
+
+                    newNotifiedIds.add(item.episodeId)
+                }
+
+                prefs.edit().putStringSet("notified_episodes", newNotifiedIds).apply()
             }
 
             Result.success()
@@ -38,7 +47,7 @@ class NewEpisodeWorker(
         }
     }
 
-    private fun sendNotification(title: String, message: String) {
+    private fun sendNotification(title: String, message: String, notificationId: Int) {
         val notificationManager = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "pek_series_new_episodes"
 
@@ -67,7 +76,6 @@ class NewEpisodeWorker(
             .setContentIntent(pendingIntent)
             .build()
 
-        val notificationId = System.currentTimeMillis().toInt()
         notificationManager.notify(notificationId, notification)
     }
 }

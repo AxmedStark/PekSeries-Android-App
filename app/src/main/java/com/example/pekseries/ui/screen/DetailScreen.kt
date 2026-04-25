@@ -1,7 +1,5 @@
 package com.example.pekseries.ui.screen
 
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,7 +21,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.pekseries.model.Episode
@@ -43,7 +40,6 @@ fun DetailScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val isSubscribed by viewModel.isSubscribed.collectAsState()
     val showDetails by viewModel.showDetails.collectAsState()
-    val trailerKey by viewModel.trailerKey.collectAsState()
 
     var selectedEpisode by remember { mutableStateOf<Episode?>(null) }
     var showFullScreenPoster by remember { mutableStateOf(false) }
@@ -63,31 +59,38 @@ fun DetailScreen(
     val visibleEpisodes = episodes.take(visibleEpisodesCount)
     val canSubscribe by viewModel.canSubscribe.collectAsState()
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize().background(DarkBg)) {
-            if (trailerKey != null) {
-                YouTubeTrailerPlayer(videoId = trailerKey!!)
-            } else {
-                Box(modifier = Modifier.fillMaxWidth().height(250.dp).background(Color.Black)) {
-                    if (isLoading) {
-                        CircularProgressIndicator(color = Primary, modifier = Modifier.align(Alignment.Center))
-                    } else {
-                        Text("Trailer not found", color = Color.Gray, modifier = Modifier.align(Alignment.Center))
-                    }
-                }
-            }
+    Box(modifier = Modifier.fillMaxSize().background(DarkBg)) {
+        Column(modifier = Modifier.fillMaxSize()) {
 
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 32.dp)) {
                 item {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = onBackClick) {
+                            IconButton(
+                                onClick = onBackClick,
+                                modifier = Modifier.offset(x = (-12).dp)
+                            ) {
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Color.White)
                             }
-                            Text("Series Info", color = Primary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        if (showDetails != null) {
+                            Text(
+                                text = showDetails!!.name,
+                                color = Color.White,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+                        } else if (!isLoading) {
+                            Text(
+                                text = "Loading...",
+                                color = Color.White,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+                        }
 
                         if (canSubscribe) {
                             Button(
@@ -109,7 +112,7 @@ fun DetailScreen(
                                 colors = CardDefaults.cardColors(containerColor = Color.DarkGray.copy(alpha = 0.5f))
                             ) {
                                 Text(
-                                    text = "Tracking and subscriptions are unavailable for this show (Not in tracking database).",
+                                    text = "Tracking and subscriptions are unavailable for this show.",
                                     color = Color.LightGray,
                                     modifier = Modifier.padding(16.dp),
                                     fontSize = 13.sp
@@ -172,7 +175,7 @@ fun DetailScreen(
                                     contentScale = ContentScale.Crop
                                 )
                             }
-                        } else {
+                        } else if (isLoading) {
                             LinearProgressIndicator(color = Primary, modifier = Modifier.fillMaxWidth())
                         }
 
@@ -272,29 +275,4 @@ fun DetailScreen(
             }
         }
     }
-}
-
-@Composable
-fun YouTubeTrailerPlayer(videoId: String) {
-    AndroidView(
-        modifier = Modifier.fillMaxWidth().height(250.dp),
-        factory = { context ->
-            WebView(context).apply {
-                settings.javaScriptEnabled = true
-                settings.loadWithOverviewMode = true
-                settings.useWideViewPort = true
-                webViewClient = WebViewClient()
-
-                val html = """
-                    <html>
-                    <body style="margin:0;padding:0;background:black;">
-                        <iframe width="100%" height="100%" src="https://www.youtube.com/embed/$videoId" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
-                    </body>
-                    </html>
-                """.trimIndent()
-
-                loadDataWithBaseURL("https://www.youtube.com", html, "text/html", "utf-8", null)
-            }
-        }
-    )
 }

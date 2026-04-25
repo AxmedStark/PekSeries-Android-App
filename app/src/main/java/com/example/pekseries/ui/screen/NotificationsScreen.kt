@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -40,10 +41,17 @@ fun NotificationsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Уведомления", color = Color.White) },
+                title = { Text("Notifications", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+                    }
+                },
+                actions = {
+                    if (notifications.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.clearNotifications() }) {
+                            Icon(Icons.Filled.Delete, null, tint = Primary)
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBg)
@@ -53,7 +61,7 @@ fun NotificationsScreen(
     ) { padding ->
         if (notifications.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Пока уведомлений нет", color = Color.Gray)
+                Text("No notifications yet", color = Color.Gray)
             }
         } else {
             LazyColumn(modifier = Modifier.padding(padding).padding(16.dp)) {
