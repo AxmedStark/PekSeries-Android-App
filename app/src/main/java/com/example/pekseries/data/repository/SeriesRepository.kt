@@ -1,6 +1,5 @@
 package com.example.pekseries.data.repository
 
-import android.util.Log
 import com.example.pekseries.BuildConfig
 import com.example.pekseries.data.NetworkClient
 import com.example.pekseries.data.remote.TmdbShowDetailDto
@@ -13,45 +12,37 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlin.text.get
 
 class SeriesRepository {
     private val tmdbApi = NetworkClient.tmdbApi
     private val tvMazeApi = NetworkClient.tvMazeApi
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
-
-    // Ключ берется безопасно из local.properties
     private val API_KEY = BuildConfig.TMDB_API_KEY
 
-    // Умный фильтр: Проверяет наличие сериала в TVMaze параллельно (в фоне)
     private suspend fun filterAndMapTmdbList(dtos: List<TmdbShowDto>, isNew: Boolean = false): List<Show> {
         return coroutineScope {
-            // Берем только 15 сериалов, чтобы не перегружать сеть лишними запросами
             dtos.take(15).map { dto ->
                 async {
-                    // 1. Получаем детали из TMDB (ради IMDB ID)
                     val details = getShowDetails(dto.id.toString())
-                    // 2. Запускаем Тройной Мост!
                     val mazeId = findTvMazeId(details)
 
-                    // 3. Если сериал ЕСТЬ в TVMaze, создаем карточку. Если нет - пропускаем (null).
                     if (mazeId != null) {
                         val watchedIds = getWatchedEpisodeIdsFromFirebase()
                         Show(
-                            id = dto.id.toString(), // Оставляем TMDB ID, DetailScreen сам разберется!
+                            id = dto.id.toString(),
                             title = dto.name,
-                            episode = dto.first_air_date?.let { "Премьера: $it" } ?: "TMDB",
-                            time = dto.vote_average?.let { "Рейтинг: ★ $it" } ?: "",
+                            episode = dto.first_air_date?.let { "Premiere: $it" } ?: "TMDB",
+                            time = dto.vote_average?.let { "Rating: ★ $it" } ?: "",
                             imageUrl = dto.getFullPosterUrl(),
                             isNew = isNew,
-                            isWatched = watchedIds.contains(mazeId) // Галочка просмотрено по TVMaze ID
+                            isWatched = watchedIds.contains(mazeId)
                         )
                     } else {
                         null
                     }
                 }
-            }.awaitAll().filterNotNull() // Ждем все проверки и удаляем пустые (null) сериалы
+            }.awaitAll().filterNotNull()
         }
     }
 
@@ -83,13 +74,12 @@ class SeriesRepository {
         } catch (e: Exception) { emptyList() }
     }
 
-    // НОВАЯ ФУНКЦИЯ: Поиск напрямую через TVMaze!
     suspend fun searchSeriesTvMaze(query: String): List<Show> {
         return try {
             val results = tvMazeApi.searchSeries(query)
             results.map { item ->
                 Show(
-                    id = "tvmaze_${item.show.id}", // ВАЖНО: Добавляем приставку для Обратного Моста!
+                    id = "tvmaze_${item.show.id}",
                     title = item.show.name,
                     imageUrl = item.show.image?.medium ?: "",
                     episode = item.show.genres?.joinToString(", ") ?: "TV Show",
@@ -102,10 +92,6 @@ class SeriesRepository {
             emptyList()
         }
     }
-
-    // ==========================================
-    // 2. DETAIL SCREEN И МОСТ (TMDB -> TVMAZE)
-    // ==========================================
 
     suspend fun getShowDetails(tmdbId: String): TmdbShowDetailDto? {
         return try {
@@ -122,60 +108,33 @@ class SeriesRepository {
         val tvdbId = tmdbDetails.external_ids?.tvdb_id
         val showName = tmdbDetails.name
 
-        // Попытка 1: Ищем по IMDB ID
         if (!imdbId.isNullOrEmpty()) {
             try {
                 val tvMazeShow = tvMazeApi.getTvMazeShowByImdb(imdbId)
                 return tvMazeShow.id.toString()
-            } catch (e: Exception) { Log.d("PekBridge", "IMDB 404: $showName") }
+            } catch (e: Exception) { }
         }
 
-        // Попытка 2: Ищем по TVDB ID (второй паспорт)
         if (tvdbId != null) {
             try {
                 val tvMazeShow = tvMazeApi.getTvMazeShowByTvdb(tvdbId)
                 return tvMazeShow.id.toString()
-            } catch (e: Exception) { Log.d("PekBridge", "TVDB 404: $showName") }
+            } catch (e: Exception) { }
         }
 
-        // Попытка 3: Ищем тупо по тексту названия (как в поиске)
         try {
             val searchResults = tvMazeApi.searchSeries(showName)
             val match = searchResults.firstOrNull {
                 it.show.name.equals(showName, ignoreCase = true)
             }
             if (match != null) {
-                Log.d("PekBridge", "Нашли по тексту: $showName -> ID ${match.show.id}")
                 return match.show.id.toString()
             }
-        } catch (e: Exception) { Log.d("PekBridge", "Search 404: $showName") }
+        } catch (e: Exception) { }
 
-        Log.e("PekBridge", "Сериала '$showName' вообще нет в базе TVMaze 😔")
         return null
     }
 
-//    suspend fun getTvMazeId(tmdbId: String): String? {
-//        return try {
-//            Log.d("PekBridge", "1. Запрос в TMDB за IMDB-паспортом для ID: $tmdbId")
-//            val tmdbDetails = tmdbApi.getShowDetails(tmdbId, API_KEY)
-//            val imdbId = tmdbDetails.external_ids?.imdb_id
-//
-//            if (!imdbId.isNullOrEmpty()) {
-//                Log.d("PekBridge", "2. Нашли IMDB ID: $imdbId. Ищем его в TVMaze...")
-//                val tvMazeShow = tvMazeApi.getTvMazeShowByImdb(imdbId)
-//                Log.d("PekBridge", "3. Успех! TVMaze вернул свой ID: ${tvMazeShow.id}")
-//                tvMazeShow.id.toString()
-//            } else {
-//                Log.e("PekBridge", "Ошибка: У этого сериала в TMDB нет IMDB ID!")
-//                null
-//            }
-//        } catch (e: Exception) {
-//            Log.e("PekBridge", "Критическая ошибка моста: ${e.message}")
-//            null
-//        }
-//    }
-
-    // ОБРАТНЫЙ МОСТ: Из TVMaze в TMDB
     suspend fun getTmdbIdByTvMazeId(tvMazeId: String): String? {
         return try {
             val tvMazeShow = tvMazeApi.getShowById(tvMazeId)
@@ -185,7 +144,6 @@ class SeriesRepository {
                 findResponse.tv_results.firstOrNull()?.id?.toString()
             } else null
         } catch (e: Exception) {
-            Log.e("PekBridge", "Ошибка обратного моста", e)
             null
         }
     }
@@ -193,16 +151,11 @@ class SeriesRepository {
     suspend fun getShowEpisodes(tvMazeId: String): List<Episode> {
         return try {
             val episodes = tvMazeApi.getShowEpisodes(tvMazeId)
-            episodes.reversed() // Разворачиваем, чтобы новые серии были сверху
+            episodes.reversed()
         } catch (e: Exception) {
-            Log.e("PekRepo", "Ошибка загрузки серий TVMaze", e)
             emptyList()
         }
     }
-
-    // ==========================================
-    // 3. FIREBASE И ПОДПИСКИ (Работают по TVMaze ID)
-    // ==========================================
 
     private suspend fun getWatchedEpisodeIdsFromFirebase(): Set<String> {
         val userId = auth.currentUser?.uid ?: return emptySet()
@@ -319,7 +272,6 @@ class SeriesRepository {
         }
     }
 
-
     data class PekNotification(
         val id: String = "",
         val title: String = "",
@@ -327,7 +279,6 @@ class SeriesRepository {
         val timestamp: Long = 0
     )
 
-    // Внутри класса SeriesRepository:
     suspend fun saveNotification(title: String, message: String) {
         val userId = auth.currentUser?.uid ?: return
         val notification = PekNotification(
