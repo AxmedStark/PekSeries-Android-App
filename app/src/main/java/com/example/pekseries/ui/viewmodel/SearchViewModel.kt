@@ -35,7 +35,7 @@ class SearchViewModel : ViewModel() {
             if (query.length > 2) {
                 _isLoading.value = true
                 try {
-                    val results = repository.searchShows(query)
+                    val results = repository.searchSeriesTvMaze(query)
                     _searchResults.value = results
                 } catch (e: Exception) {
                     _searchResults.value = emptyList()

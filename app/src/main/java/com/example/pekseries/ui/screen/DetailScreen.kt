@@ -28,6 +28,9 @@ import com.example.pekseries.ui.component.VideoPlayer
 import com.example.pekseries.ui.theme.DarkBg
 import com.example.pekseries.ui.theme.Primary
 import com.example.pekseries.ui.viewmodel.DetailViewModel
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.ui.viewinterop.AndroidView
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -40,6 +43,7 @@ fun DetailScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val isSubscribed by viewModel.isSubscribed.collectAsState()
     val showDetails by viewModel.showDetails.collectAsState()
+    val trailerKey by viewModel.trailerKey.collectAsState()
 
     var selectedEpisode by remember { mutableStateOf<Episode?>(null) }
     var showFullScreenPoster by remember { mutableStateOf(false) }
@@ -57,17 +61,30 @@ fun DetailScreen(
     var isEpisodesExpanded by remember { mutableStateOf(false) }
     var visibleEpisodesCount by remember { mutableStateOf(10) }
     val visibleEpisodes = episodes.take(visibleEpisodesCount)
+    val canSubscribe by viewModel.canSubscribe.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
 
         Column(modifier = Modifier.fillMaxSize().background(DarkBg)) {
 
-            // 1. ПЛЕЕР
-            if (selectedEpisode != null) {
-                VideoPlayer(videoUrl = selectedEpisode!!.videoUrl)
+//            // 1. video player
+//            if (selectedEpisode != null) {
+//                VideoPlayer(videoUrl = selectedEpisode!!.videoUrl)
+//            } else {
+//                Box(modifier = Modifier.fillMaxWidth().height(250.dp).background(Color.Black)) {
+//                    if (isLoading) CircularProgressIndicator(color = Primary, modifier = Modifier.align(Alignment.Center))
+//                }
+//            }
+
+            if (trailerKey != null) {
+                YouTubeTrailerPlayer(videoId = trailerKey!!)
             } else {
                 Box(modifier = Modifier.fillMaxWidth().height(250.dp).background(Color.Black)) {
-                    if (isLoading) CircularProgressIndicator(color = Primary, modifier = Modifier.align(Alignment.Center))
+                    if (isLoading) {
+                        CircularProgressIndicator(color = Primary, modifier = Modifier.align(Alignment.Center))
+                    } else {
+                        Text("Трейлер не найден 😔", color = Color.Gray, modifier = Modifier.align(Alignment.Center))
+                    }
                 }
             }
 
@@ -83,18 +100,32 @@ fun DetailScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        Button(
-                            onClick = { viewModel.toggleSubscription() },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isSubscribed) Color.DarkGray else Primary,
-                                contentColor = if (isSubscribed) Primary else DarkBg
-                            ),
-                            modifier = Modifier.fillMaxWidth().height(50.dp)
-                        ) {
-                            Text(
-                                text = if (isSubscribed) "Remove from Subscriptions" else "Add to Subscriptions",
-                                fontWeight = FontWeight.Bold
-                            )
+                        if (canSubscribe) {
+                            Button(
+                                onClick = { viewModel.toggleSubscription() },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isSubscribed) Color.DarkGray else Primary,
+                                    contentColor = if (isSubscribed) Primary else DarkBg
+                                ),
+                                modifier = Modifier.fillMaxWidth().height(50.dp)
+                            ) {
+                                Text(
+                                    text = if (isSubscribed) "Remove from Subscriptions" else "Add to Subscriptions",
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        } else {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = Color.DarkGray.copy(alpha = 0.5f))
+                            ) {
+                                Text(
+                                    text = "Отслеживание серий и подписка недоступны для этого шоу (Нет в базе трекинга)",
+                                    color = Color.LightGray,
+                                    modifier = Modifier.padding(16.dp),
+                                    fontSize = 13.sp
+                                )
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(24.dp))
@@ -239,4 +270,30 @@ fun DetailScreen(
             }
         }
     }
+}
+
+@Composable
+fun YouTubeTrailerPlayer(videoId: String) {
+    AndroidView(
+        modifier = Modifier.fillMaxWidth().height(250.dp),
+        factory = { context ->
+            WebView(context).apply {
+                settings.javaScriptEnabled = true
+                settings.loadWithOverviewMode = true
+                settings.useWideViewPort = true
+                webViewClient = WebViewClient()
+
+                // Встраиваем плеер без полей и отступов
+                val html = """
+                    <html>
+                    <body style="margin:0;padding:0;background:black;">
+                        <iframe width="100%" height="100%" src="https://www.youtube.com/embed/$videoId" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+                    </body>
+                    </html>
+                """.trimIndent()
+
+                loadDataWithBaseURL("https://www.youtube.com", html, "text/html", "utf-8", null)
+            }
+        }
+    )
 }

@@ -14,6 +14,9 @@ interface TvMazeApi {
     @GET("lookup/shows")
     suspend fun getTvMazeShowByImdb(@Query("imdb") imdbId: String): TvMazeShowDto
 
+    @GET("lookup/shows")
+    suspend fun getTvMazeShowByTvdb(@Query("thetvdb") tvdbId: Int): TvMazeShowDto
+
     // ==========================================
     // СТАРЫЕ ФУНКЦИИ (Для работы Подписок/Watchlist)
     // ==========================================
@@ -59,7 +62,8 @@ data class TvMazeShowDto(
     val rating: TvMazeRatingDto? = null,
     val premiered: String? = null,
     val weight: Int? = 0,
-    val type: String? = null
+    val type: String? = null,
+    val externals: TvMazeExternalsDto? = null
 )
 
 data class TvMazeRatingDto(
@@ -70,3 +74,5 @@ data class TvMazeImageDto(
     val medium: String?,
     val original: String?
 )
+
+data class TvMazeExternalsDto(val imdb: String?, val thetvdb: Int?)

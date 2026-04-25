@@ -22,43 +22,70 @@ class DetailViewModel : ViewModel() {
     private val _isSubscribed = MutableStateFlow(false)
     val isSubscribed: StateFlow<Boolean> = _isSubscribed.asStateFlow()
 
-    // Модель из TMDB для красивого отображения постеров и описания
+    // Новая переменная: можно ли вообще подписаться? (Есть ли сериал в TVMaze)
+    private val _canSubscribe = MutableStateFlow(false)
+    val canSubscribe: StateFlow<Boolean> = _canSubscribe.asStateFlow()
+
     private val _showDetails = MutableStateFlow<TmdbShowDetailDto?>(null)
     val showDetails: StateFlow<TmdbShowDetailDto?> = _showDetails.asStateFlow()
 
-    // Скрытая переменная: храним TVMaze ID для подписок и серий
+    private val _trailerKey = MutableStateFlow<String?>(null)
+    val trailerKey: StateFlow<String?> = _trailerKey.asStateFlow()
+
     private var currentTvMazeId: String? = null
 
-    // showId здесь — это TMDB ID, который пришел с Главной страницы или Поиска
-    fun loadEpisodes(showId: String) {
+    fun loadEpisodes(passedId: String) {
         viewModelScope.launch {
+            // Очищаем старые данные
+            _showDetails.value = null
+            _trailerKey.value = null
+            _episodes.value = emptyList()
+            _isSubscribed.value = false
+            _canSubscribe.value = false
+            currentTvMazeId = null
+
             _isLoading.value = true
 
-            // 1. Сначала качаем красивые детали из TMDB (описание, постеры, IMDB ID)
-            _showDetails.value = repository.getShowDetails(showId)
+            var tmdbId: String? = passedId
+            var mazeId: String? = null
 
-            // 2. Идем по мосту: просим Репозиторий найти TVMaze ID по этому TMDB ID
-            currentTvMazeId = repository.getTvMazeId(showId)
+            // 1. ПРОВЕРЯЕМ, ОТКУДА МЫ ПРИШЛИ
+            if (passedId.startsWith("tvmaze_")) {
+                // Пришли из Подписок! Включаем Обратный Мост
+                mazeId = passedId.removePrefix("tvmaze_")
+                tmdbId = repository.getTmdbIdByTvMazeId(mazeId)
+            }
 
-            if (currentTvMazeId != null) {
-                // 3. Ура, мост сработал! Проверяем подписку по TVMaze ID
-                _isSubscribed.value = repository.isSubscribed(currentTvMazeId!!)
+            // 2. ЕСЛИ ЕСТЬ TMDB ID, ГРУЗИМ КРАСОТУ И ТРЕЙЛЕРЫ
+            if (tmdbId != null) {
+                val details = repository.getShowDetails(tmdbId)
+                _showDetails.value = details
 
-                // 4. Качаем список серий из TVMaze
-                val result = repository.getShowEpisodes(currentTvMazeId!!)
-                _episodes.value = result
+                _trailerKey.value = details?.videos?.results?.firstOrNull {
+                    it.site == "YouTube" && it.type == "Trailer"
+                }?.key ?: details?.videos?.results?.firstOrNull { it.site == "YouTube" }?.key
+
+                // Если пришли с Главной, mazeId еще пустой, включаем Прямой Мост
+                if (mazeId == null) {
+                    mazeId = repository.findTvMazeId(details)
+                }
+            }
+
+            currentTvMazeId = mazeId
+
+            // 3. ЕСЛИ ЕСТЬ TVMAZE ID, ГРУЗИМ СЕРИИ И КНОПКУ ПОДПИСКИ
+            if (mazeId != null) {
+                _canSubscribe.value = true
+                _isSubscribed.value = repository.isSubscribed(mazeId)
+                _episodes.value = repository.getShowEpisodes(mazeId)
             } else {
-                // Если у сериала вдруг нет IMDB ID (очень редкий случай для старых шоу)
                 _episodes.value = emptyList()
-                _isSubscribed.value = false
             }
 
             _isLoading.value = false
         }
     }
 
-    // Обрати внимание: мы больше не передаем сюда showId из UI!
-    // ViewModel сама знает, какой TVMaze ID использовать.
     fun toggleSubscription() {
         viewModelScope.launch {
             currentTvMazeId?.let { mazeId ->

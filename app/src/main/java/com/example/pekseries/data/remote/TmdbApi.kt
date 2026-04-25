@@ -63,6 +63,13 @@ interface TmdbApi {
         @Query("api_key") apiKey: String,
         @Query("language") language: String = "en-US"
     ): TmdbSeasonDto
+
+    @GET("find/{external_id}")
+    suspend fun findByExternalId(
+        @Path("external_id") externalId: String,
+        @Query("api_key") apiKey: String,
+        @Query("external_source") externalSource: String = "imdb_id"
+    ): TmdbFindResponse
 }
 
 // ==========================================
@@ -109,10 +116,11 @@ data class TmdbGenreDto(val id: Int, val name: String)
 
 data class TmdbVideosResponse(val results: List<TmdbVideoDto>)
 
+data class TmdbFindResponse(val tv_results: List<TmdbShowDto>)
+
 data class TmdbVideoDto(val key: String, val site: String, val type: String)
 
-// Та самая модель для связи с TVMaze
-data class TmdbExternalIdsDto(val imdb_id: String?)
+data class TmdbExternalIdsDto(val imdb_id: String?, val tvdb_id: Int?)
 
 data class TmdbSeasonDto(val episodes: List<TmdbEpisodeDetailDto>)
 
