@@ -7,21 +7,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pekseries.ui.theme.*
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun ProfileScreen(
@@ -29,6 +30,13 @@ fun ProfileScreen(
     viewModel: com.example.pekseries.ui.viewmodel.WatchlistViewModel = viewModel()
 ) {
     val stats by viewModel.profileStats.collectAsState()
+
+    // Состояние тумблера уведомлений (в следующем шаге привяжем сюда FCM!)
+    var pushEnabled by remember { mutableStateOf(true) }
+
+    // Достаем реальные данные пользователя из Firebase
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val userEmail = currentUser?.email ?: "user@pekseries.com"
 
     LaunchedEffect(Unit) {
         viewModel.loadProfileStats()
@@ -46,12 +54,20 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(30.dp))
 
         Box {
-            Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.DarkGray))
+            Box(
+                modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.DarkGray),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Filled.Person, contentDescription = "Avatar", tint = Color.Gray, modifier = Modifier.size(50.dp))
+            }
         }
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("Axmed Stark", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        Text("@AxmedStark • Baku, Azerbaijan", color = Primary, fontSize = 14.sp)
+        Text(userEmail, color = Primary, fontSize = 14.sp)
+
+        Spacer(modifier = Modifier.height(4.dp))
+        Text("Baku, Azerbaijan", color = Color.Gray, fontSize = 12.sp)
 
         Spacer(modifier = Modifier.height(30.dp))
 
@@ -66,9 +82,12 @@ fun ProfileScreen(
         Text("Preferences", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
         Spacer(modifier = Modifier.height(10.dp))
 
-        PreferenceItem("Push Notifications", true)
-//        PreferenceItem("Telegram Sync", true)
-//        PreferenceItem("Dark mode", true)
+        PreferenceItem(
+            text = "Push Notifications",
+            icon = Icons.Filled.Notifications,
+            checked = pushEnabled,
+            onCheckedChange = { pushEnabled = it }
+        )
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -100,7 +119,7 @@ fun StatCard(number: String, label: String) {
 }
 
 @Composable
-fun PreferenceItem(text: String, enabled: Boolean) {
+fun PreferenceItem(text: String, icon: ImageVector, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -112,17 +131,19 @@ fun PreferenceItem(text: String, enabled: Boolean) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.size(32.dp).background(Primary.copy(alpha = 0.2f), RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.Settings, null, tint = Primary, modifier = Modifier.size(16.dp))
+                Icon(icon, null, tint = Primary, modifier = Modifier.size(16.dp))
             }
             Spacer(modifier = Modifier.width(16.dp))
             Text(text, color = Color.White)
         }
         Switch(
-            checked = enabled,
-            onCheckedChange = {},
+            checked = checked,
+            onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Primary,
-                checkedTrackColor = PekYellow
+                checkedTrackColor = Primary.copy(alpha = 0.5f),
+                uncheckedThumbColor = Color.Gray,
+                uncheckedTrackColor = Color.DarkGray
             )
         )
     }
