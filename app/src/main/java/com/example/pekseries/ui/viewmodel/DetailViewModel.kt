@@ -22,7 +22,6 @@ class DetailViewModel : ViewModel() {
     private val _isSubscribed = MutableStateFlow(false)
     val isSubscribed: StateFlow<Boolean> = _isSubscribed.asStateFlow()
 
-    // Новая переменная: можно ли вообще подписаться? (Есть ли сериал в TVMaze)
     private val _canSubscribe = MutableStateFlow(false)
     val canSubscribe: StateFlow<Boolean> = _canSubscribe.asStateFlow()
 
@@ -36,7 +35,6 @@ class DetailViewModel : ViewModel() {
 
     fun loadEpisodes(passedId: String) {
         viewModelScope.launch {
-            // Очищаем старые данные
             _showDetails.value = null
             _trailerKey.value = null
             _episodes.value = emptyList()
@@ -49,14 +47,11 @@ class DetailViewModel : ViewModel() {
             var tmdbId: String? = passedId
             var mazeId: String? = null
 
-            // 1. ПРОВЕРЯЕМ, ОТКУДА МЫ ПРИШЛИ
             if (passedId.startsWith("tvmaze_")) {
-                // Пришли из Подписок! Включаем Обратный Мост
                 mazeId = passedId.removePrefix("tvmaze_")
                 tmdbId = repository.getTmdbIdByTvMazeId(mazeId)
             }
 
-            // 2. ЕСЛИ ЕСТЬ TMDB ID, ГРУЗИМ КРАСОТУ И ТРЕЙЛЕРЫ
             if (tmdbId != null) {
                 val details = repository.getShowDetails(tmdbId)
                 _showDetails.value = details
@@ -65,7 +60,6 @@ class DetailViewModel : ViewModel() {
                     it.site == "YouTube" && it.type == "Trailer"
                 }?.key ?: details?.videos?.results?.firstOrNull { it.site == "YouTube" }?.key
 
-                // Если пришли с Главной, mazeId еще пустой, включаем Прямой Мост
                 if (mazeId == null) {
                     mazeId = repository.findTvMazeId(details)
                 }
@@ -73,7 +67,6 @@ class DetailViewModel : ViewModel() {
 
             currentTvMazeId = mazeId
 
-            // 3. ЕСЛИ ЕСТЬ TVMAZE ID, ГРУЗИМ СЕРИИ И КНОПКУ ПОДПИСКИ
             if (mazeId != null) {
                 _canSubscribe.value = true
                 _isSubscribed.value = repository.isSubscribed(mazeId)

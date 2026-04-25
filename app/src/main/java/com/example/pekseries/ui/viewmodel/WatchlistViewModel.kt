@@ -30,7 +30,6 @@ class WatchlistViewModel : ViewModel() {
         loadTodayEpisodes()
     }
 
-    // Сделали функцию публичной, чтобы вызывать её из LaunchedEffect для автообновления
     fun loadTodayEpisodes() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -55,17 +54,11 @@ class WatchlistViewModel : ViewModel() {
                 return@launch
             }
 
-            // Используем async/awaitAll для быстрого параллельного расчета всех подписок
             val results = subs.map { show ->
                 async {
                     try {
-                        // КРИТИЧЕСКИЙ МОМЕНТ: Убираем префикс "tvmaze_", иначе
-                        // запрос за списком серий к TVMaze вернет ошибку 404.
                         val cleanId = show.id.removePrefix("tvmaze_")
                         val episodes = repository.getShowEpisodes(cleanId)
-
-                        // Пара: (количество серий, общее время в минутах)
-                        // Берем среднее время серии 45 минут
                         Pair(episodes.size, episodes.size * 45)
                     } catch (e: Exception) {
                         Pair(0, 0)
@@ -73,11 +66,9 @@ class WatchlistViewModel : ViewModel() {
                 }
             }.awaitAll()
 
-            // Суммируем все результаты
             val totalEpisodes = results.sumOf { it.first }
             val totalMinutes = results.sumOf { it.second }
 
-            // Обновляем статистику (Кол-во сериалов, Всего серий, Всего часов)
             _profileStats.value = Triple(subs.size, totalEpisodes, totalMinutes / 60)
         }
     }

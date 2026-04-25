@@ -21,7 +21,6 @@ class HomeViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    // Официальные ID жанров TMDB для TV-шоу
     private val genreMap = mapOf(
         "Боевик / Приключения" to "10759",
         "Анимация / Аниме" to "16",
@@ -37,7 +36,6 @@ class HomeViewModel : ViewModel() {
         "Вестерн" to "10770"
     )
 
-    // Официальные типы контента TMDB
     private val typeMap = mapOf(
         "Игровой сериал" to "4",
         "Мини-сериал" to "2",
