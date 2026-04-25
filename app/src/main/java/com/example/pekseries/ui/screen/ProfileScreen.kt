@@ -1,5 +1,9 @@
 package com.example.pekseries.ui.screen
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -17,26 +21,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.pekseries.ui.theme.*
-import com.google.firebase.auth.FirebaseAuth
-import android.Manifest
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import com.google.firebase.messaging.FirebaseMessaging
-import androidx.compose.ui.platform.LocalContext
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import java.util.concurrent.TimeUnit
-import com.example.pekseries.service.EpisodeCheckWorker
+import coil.compose.AsyncImage
+import com.example.pekseries.ui.theme.*
 import com.example.pekseries.worker.NewEpisodeWorker
+import com.google.firebase.auth.FirebaseAuth
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun ProfileScreen(
@@ -45,20 +45,15 @@ fun ProfileScreen(
 ) {
     val context = LocalContext.current
     val stats by viewModel.profileStats.collectAsState()
-
-    // Инициализируем SharedPreferences
     val prefs = remember { context.getSharedPreferences("pek_prefs", android.content.Context.MODE_PRIVATE) }
 
-    // Читаем сохраненное состояние (по умолчанию false)
-    var pushEnabled by remember { mutableStateOf(prefs.getBoolean("push_enabled", false)) }
+    var pushEnabled by remember { mutableStateOf(prefs.getBoolean("push_enabled", true)) }
 
     val onTogglePush = { isChecked: Boolean ->
         pushEnabled = isChecked
-        // Сохраняем выбор пользователя
         prefs.edit().putBoolean("push_enabled", isChecked).apply()
 
         if (isChecked) {
-            // Запускаем воркер на 30 минут
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
@@ -69,29 +64,37 @@ fun ProfileScreen(
 
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 "DailyEpisodeCheck",
-                ExistingPeriodicWorkPolicy.UPDATE, // UPDATE перепишет старую задачу на 30-минутную
+                ExistingPeriodicWorkPolicy.UPDATE,
                 workRequest
             )
         } else {
-            // Если выключил — полностью отменяем задачу
             WorkManager.getInstance(context).cancelUniqueWork("DailyEpisodeCheck")
         }
     }
 
-    // В UI части передай эти данные в свой PreferenceItem:
-    PreferenceItem(
-        text = "Push Notifications",
-        icon = Icons.Filled.Notifications,
-        checked = pushEnabled,
-        onCheckedChange = { onTogglePush(it) }
-    )
-
-    // Достаем реальные данные пользователя из Firebase
     val currentUser = FirebaseAuth.getInstance().currentUser
-    val userEmail = currentUser?.email ?: "user@pekseries.com"
+    val userName = currentUser?.displayName ?: "Киноман"
+    val userEmail = currentUser?.email ?: ""
+    val photoUrl = currentUser?.photoUrl
 
     LaunchedEffect(Unit) {
         viewModel.loadProfileStats()
+
+        if (pushEnabled) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val workRequest = PeriodicWorkRequestBuilder<NewEpisodeWorker>(30, TimeUnit.MINUTES)
+                .setConstraints(constraints)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                "DailyEpisodeCheck",
+                ExistingPeriodicWorkPolicy.KEEP,
+                workRequest
+            )
+        }
     }
 
     Column(
@@ -99,27 +102,31 @@ fun ProfileScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.Transparent) // Заглушка для центровки
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.Transparent)
             Text("Profile", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            Icon(Icons.Filled.Settings, null, tint = Color.White)
+            Icon(Icons.Filled.Settings, null, tint = Color.Transparent)
         }
         Spacer(modifier = Modifier.height(30.dp))
 
-        Box {
-            Box(
-                modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.DarkGray),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Filled.Person, contentDescription = "Avatar", tint = Color.Gray, modifier = Modifier.size(50.dp))
+        Box(
+            modifier = Modifier.size(100.dp).clip(CircleShape).background(Color.DarkGray),
+            contentAlignment = Alignment.Center
+        ) {
+            if (photoUrl != null) {
+                AsyncImage(
+                    model = photoUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Icon(Icons.Filled.Person, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(50.dp))
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Axmed Stark", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Text(userName, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         Text(userEmail, color = Primary, fontSize = 14.sp)
-
-        Spacer(modifier = Modifier.height(4.dp))
-        Text("Baku, Azerbaijan", color = Color.Gray, fontSize = 12.sp)
 
         Spacer(modifier = Modifier.height(30.dp))
 
@@ -199,23 +206,4 @@ fun PreferenceItem(text: String, icon: ImageVector, checked: Boolean, onCheckedC
             )
         )
     }
-}
-
-// Функция для настройки фоновой работы
-private fun scheduleDailyCheck(context: android.content.Context) {
-    // Условие: задача запустится только если есть интернет
-    val constraints = Constraints.Builder()
-        .setRequiredNetworkType(NetworkType.CONNECTED)
-        .build()
-
-    val workRequest = PeriodicWorkRequestBuilder<EpisodeCheckWorker>(30, TimeUnit.MINUTES)
-        .setConstraints(constraints)
-        .build()
-
-    // Добавляем задачу в систему (уникальное имя не даст запустить ее дважды)
-    WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-        "DailyEpisodeCheck",
-        ExistingPeriodicWorkPolicy.UPDATE,
-        workRequest
-    )
 }
