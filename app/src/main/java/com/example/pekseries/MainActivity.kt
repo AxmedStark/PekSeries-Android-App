@@ -12,12 +12,9 @@ import com.example.pekseries.ui.theme.PekSeriesTheme
 
 class MainActivity : ComponentActivity() {
 
-    // Оставляем только проверку разрешений
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        // Если разрешил, мы просто даем возможность включить пуши в профиле
-    }
+    ) { _ -> }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

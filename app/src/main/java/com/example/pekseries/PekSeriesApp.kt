@@ -1,5 +1,6 @@
 package com.example.pekseries
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,17 +12,16 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.pekseries.ui.screen.*
-import com.example.pekseries.ui.theme.*
-import com.example.pekseries.ui.viewmodel.AuthViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.activity.compose.BackHandler
+import com.example.pekseries.ui.screen.*
+import com.example.pekseries.ui.theme.*
+import com.example.pekseries.ui.viewmodel.AuthViewModel
 
 @Composable
 fun PekSeriesApp() {
@@ -43,7 +43,7 @@ fun PekSeriesApp() {
 
             composable("notifications") {
                 NotificationsScreen(
-                    onBack = { navController.popBackStack() } // Поменяли onBackClick на onBack
+                    onBack = { navController.popBackStack() }
                 )
             }
 
@@ -59,17 +59,6 @@ fun PekSeriesApp() {
         LoginScreen(authViewModel = authViewModel)
     }
 }
-//@Composable
-//fun PekSeriesApp() {
-//    val authViewModel: AuthViewModel = viewModel()
-//    val isLoggedIn by authViewModel.isUserLoggedIn.collectAsState()
-//
-//    if (isLoggedIn) {
-//        PekSeriesMainContent(onLogout = { authViewModel.logout() })
-//    } else {
-//        LoginScreen(authViewModel = authViewModel)
-//    }
-//}
 
 @Composable
 fun PekSeriesMainContent(
