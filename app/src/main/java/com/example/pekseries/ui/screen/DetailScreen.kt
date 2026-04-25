@@ -1,5 +1,7 @@
 package com.example.pekseries.ui.screen
 
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,16 +23,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.pekseries.model.Episode
-import com.example.pekseries.ui.component.VideoPlayer
 import com.example.pekseries.ui.theme.DarkBg
 import com.example.pekseries.ui.theme.Primary
 import com.example.pekseries.ui.viewmodel.DetailViewModel
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import androidx.compose.ui.viewinterop.AndroidView
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -64,18 +63,7 @@ fun DetailScreen(
     val canSubscribe by viewModel.canSubscribe.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
-
         Column(modifier = Modifier.fillMaxSize().background(DarkBg)) {
-
-//            // 1. video player
-//            if (selectedEpisode != null) {
-//                VideoPlayer(videoUrl = selectedEpisode!!.videoUrl)
-//            } else {
-//                Box(modifier = Modifier.fillMaxWidth().height(250.dp).background(Color.Black)) {
-//                    if (isLoading) CircularProgressIndicator(color = Primary, modifier = Modifier.align(Alignment.Center))
-//                }
-//            }
-
             if (trailerKey != null) {
                 YouTubeTrailerPlayer(videoId = trailerKey!!)
             } else {
@@ -83,7 +71,7 @@ fun DetailScreen(
                     if (isLoading) {
                         CircularProgressIndicator(color = Primary, modifier = Modifier.align(Alignment.Center))
                     } else {
-                        Text("Трейлер не найден 😔", color = Color.Gray, modifier = Modifier.align(Alignment.Center))
+                        Text("Трейлер не найден \uD83D\uDE14", color = Color.Gray, modifier = Modifier.align(Alignment.Center))
                     }
                 }
             }
@@ -166,7 +154,7 @@ fun DetailScreen(
                                         .width(110.dp)
                                         .height(160.dp)
                                         .clip(RoundedCornerShape(8.dp))
-                                        .clickable { showFullScreenPoster = true }, // Открываем на весь экран
+                                        .clickable { showFullScreenPoster = true },
                                     contentScale = ContentScale.Crop
                                 )
                             }
@@ -283,7 +271,6 @@ fun YouTubeTrailerPlayer(videoId: String) {
                 settings.useWideViewPort = true
                 webViewClient = WebViewClient()
 
-                // Встраиваем плеер без полей и отступов
                 val html = """
                     <html>
                     <body style="margin:0;padding:0;background:black;">

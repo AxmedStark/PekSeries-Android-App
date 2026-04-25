@@ -69,7 +69,6 @@ fun SearchScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
-                        // ТУТ ВАЖНО: передаем TMDB ID (show.id) в DetailScreen
                         .clickable { onNavigateToDetail(show.id) },
                     colors = CardDefaults.cardColors(
                         containerColor = Color(0xFF2C2C2C)
@@ -88,7 +87,7 @@ fun SearchScreen(
                             modifier = Modifier
                                 .size(width = 70.dp, height = 100.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(Color.DarkGray), // Заглушка, пока грузится картинка
+                                .background(Color.DarkGray),
                             contentScale = ContentScale.Crop
                         )
                         Spacer(modifier = Modifier.width(16.dp))

@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -17,7 +16,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.pekseries.model.TimelineItem
 import com.example.pekseries.ui.theme.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
@@ -90,7 +88,7 @@ fun UpcomingContent(
         }
     } else if (todayEpisodes.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No upcoming episodes for your subscriptions 🍿", color = Color.Gray)
+            Text("No upcoming episodes for your subscriptions \uD83C\uDF7F", color = Color.Gray)
         }
     } else {
         LazyColumn(
@@ -132,7 +130,7 @@ fun SubscriptionsContent(
         }
     } else if (subscriptions.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("У вас пока нет подписок 🎬", color = Color.Gray)
+            Text("У вас пока нет подписок \uD83C\uDFAC", color = Color.Gray)
         }
     } else {
         LazyColumn(
@@ -220,32 +218,6 @@ fun SubscriptionCard(show: Show, onClick: () -> Unit) {
                 Text(show.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text("Subscribed", color = Primary, fontSize = 14.sp)
-            }
-        }
-    }
-}
-
-@Composable
-fun TimelineRow(item: TimelineItem) {
-    IntrinsicSize.Min
-    Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(50.dp)) {
-            Text(item.time, color = if(item.isLive) PekYellow else Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(4.dp))
-            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(if(item.isLive) PekYellow else Color.Gray))
-            Box(modifier = Modifier.width(2.dp).fillMaxHeight().background(Color.DarkGray))
-        }
-
-        Card(
-            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp, start = 8.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(item.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text(item.sub, color = Color.Gray, fontSize = 14.sp)
-                }
-                Box(modifier = Modifier.size(50.dp).clip(RoundedCornerShape(8.dp)).background(Color.Gray))
             }
         }
     }
