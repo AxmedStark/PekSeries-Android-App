@@ -43,7 +43,7 @@ fun PekSeriesApp() {
 
             composable("notifications") {
                 NotificationsScreen(
-                    onBackClick = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() } // Поменяли onBackClick на onBack
                 )
             }
 
@@ -118,7 +118,7 @@ fun PekSeriesMainContent(
                 0 -> HomeScreen(onNavigateToDetail = onNavigateToDetail, onNavigateToNotifications = onNavigateToNotifications)
                 1 -> SearchScreen(onNavigateToDetail = onNavigateToDetail)
                 2 -> UpcomingScreen(onNavigateToDetail = onNavigateToDetail)
-                3 -> ProfileScreen(onLogout)
+                3 -> ProfileScreen(onLogout = onLogout)
             }
         }
     }

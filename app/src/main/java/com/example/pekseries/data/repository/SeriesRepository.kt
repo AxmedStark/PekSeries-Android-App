@@ -13,6 +13,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlin.text.get
 
 class SeriesRepository {
     private val tmdbApi = NetworkClient.tmdbApi
@@ -316,5 +317,37 @@ class SeriesRepository {
         } catch (e: Exception) {
             emptyList()
         }
+    }
+
+
+    data class PekNotification(
+        val id: String = "",
+        val title: String = "",
+        val message: String = "",
+        val timestamp: Long = 0
+    )
+
+    // Внутри класса SeriesRepository:
+    suspend fun saveNotification(title: String, message: String) {
+        val userId = auth.currentUser?.uid ?: return
+        val notification = PekNotification(
+            title = title,
+            message = message,
+            timestamp = System.currentTimeMillis()
+        )
+        try {
+            db.collection("users").document(userId).collection("notifications").add(notification).await()
+        } catch (e: Exception) {}
+    }
+
+    suspend fun getNotifications(): List<PekNotification> {
+        val userId = auth.currentUser?.uid ?: return emptyList()
+        return try {
+            val snapshot = db.collection("users").document(userId)
+                .collection("notifications")
+                .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .get().await()
+            snapshot.toObjects(PekNotification::class.java)
+        } catch (e: Exception) { emptyList() }
     }
 }

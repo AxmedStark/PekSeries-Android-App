@@ -23,43 +23,32 @@ class NewEpisodeWorker(
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
-        Log.d("PekWorker", "Фоновая проверка новых серий запущена!")
+        val repository = SeriesRepository()
+        Log.d("PekWorker", "--- ЗАПУСК ПРОВЕРКИ РАСПИСАНИЯ ---")
 
-        try {
-            val auth = FirebaseAuth.getInstance()
-            val userId = auth.currentUser?.uid
+        return try {
+            val upcoming = repository.getUpcomingSubscribedEpisodes()
+            // Получаем дату в формате YYYY-MM-DD
+            val today = java.time.LocalDate.now().toString()
 
-            if (userId == null) return Result.success()
+            val outToday = upcoming.filter { it.time == today }
 
-            val db = FirebaseFirestore.getInstance()
-            val repository = SeriesRepository()
+            if (outToday.isNotEmpty()) {
+                val names = outToday.joinToString(", ") { it.title }
+                Log.d("PekWorker", "НАЙДЕНО: $names")
 
-            val subsSnapshot = db.collection("users")
-                .document(userId)
-                .collection("subscriptions")
-                .get()
-                .await()
-
-            val subscribedIds = subsSnapshot.documents.map { it.id }
-            if (subscribedIds.isEmpty()) return Result.success()
-
-            val todayShows = repository.getTodayEpisodes()
-
-            val matches = todayShows.filter { show ->
-                subscribedIds.contains(show.id)
+                repository.saveNotification("Новые серии сегодня!", names)
+                sendNotification("Премьеры сегодня! 🍿", names)
+            } else {
+                Log.d("PekWorker", "НИЧЕГО НЕ НАЙДЕНО на дату: $today")
+                // Для теста можно отправить пуш "Пусто", чтобы убедиться что воркер живой:
+                 sendNotification("Проверка PekSeries", "Новых серий пока нет")
             }
 
-            matches.forEach { show ->
-                sendNotification(
-                    title = "New Episode Today!",
-                    message = "${show.title} - ${show.episode} is out!"
-                )
-            }
-
-            return Result.success()
+            Result.success()
         } catch (e: Exception) {
-            Log.e("PekWorker", "Ошибка при проверке серий", e)
-            return Result.retry() // Попробовать позже, если пропал интернет
+            Log.e("PekWorker", "ОШИБКА ПРОВЕРКИ: ${e.message}")
+            Result.retry()
         }
     }
 

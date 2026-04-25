@@ -4,85 +4,90 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.pekseries.ui.theme.CardBg
-import com.example.pekseries.ui.theme.DarkBg
-import com.example.pekseries.ui.theme.PekYellow
-import com.example.pekseries.ui.theme.Primary
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.pekseries.ui.theme.*
+import com.example.pekseries.ui.viewmodel.NotificationsViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotificationsScreen(onBackClick: () -> Unit) {
-    val notifications = listOf(
-        NotificationItem("Новая серия!", "S04E06 сериала 'The Boys' уже доступна.", "Только что"),
-        NotificationItem("Премьера", "Вышел первый эпизод 'Daredevil: Born Again'.", "2 часа назад"),
-        NotificationItem("PekSeries Pro", "Добро пожаловать! Ваша подписка активна.", "Вчера"),
-        NotificationItem("Напоминание", "Вы не досмотрели 'House of the Dragon'.", "3 дня назад")
-    )
+fun NotificationsScreen(
+    onBack: () -> Unit,
+    viewModel: NotificationsViewModel = viewModel()
+) {
+    val notifications by viewModel.notifications.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().background(DarkBg)) {
-        // Шапка
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBackClick) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад", tint = Color.White)
+    LaunchedEffect(Unit) {
+        viewModel.loadNotifications()
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Уведомления", color = Color.White) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBg)
+            )
+        },
+        containerColor = DarkBg
+    ) { padding ->
+        if (notifications.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Пока уведомлений нет", color = Color.Gray)
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Notifications", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        }
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            items(notifications) { notif ->
-                NotificationCard(notif)
+        } else {
+            LazyColumn(modifier = Modifier.padding(padding).padding(16.dp)) {
+                items(notifications) { notify ->
+                    NotificationItem(notify)
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
             }
         }
     }
 }
 
 @Composable
-fun NotificationCard(item: NotificationItem) {
+fun NotificationItem(notify: com.example.pekseries.data.repository.SeriesRepository.PekNotification) {
+    val date = SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()).format(Date(notify.timestamp))
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
             .background(CardBg, RoundedCornerShape(12.dp))
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier.size(40.dp).clip(CircleShape).background(Primary.copy(alpha = 0.2f)),
+            modifier = Modifier.size(40.dp).background(Primary.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Filled.Notifications, contentDescription = null, tint = Primary)
+            Icon(Icons.Default.Notifications, null, tint = Primary, modifier = Modifier.size(20.dp))
         }
-
         Spacer(modifier = Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(item.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(item.message, color = Color.LightGray, fontSize = 14.sp, lineHeight = 18.sp)
+        Column {
+            Text(notify.title, color = PekYellow, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(notify.message, color = Color.White, fontSize = 13.sp)
+            Text(date, color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(top = 4.dp))
         }
-
-        Text(item.time, color = PekYellow, fontSize = 12.sp)
     }
 }
-
-data class NotificationItem(val title: String, val message: String, val time: String)
