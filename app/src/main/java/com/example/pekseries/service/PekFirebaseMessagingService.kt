@@ -10,7 +10,6 @@ import com.google.firebase.messaging.RemoteMessage
 
 class PekFirebaseMessagingService : FirebaseMessagingService() {
 
-    // Эта функция срабатывает, когда прилетает пуш
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
 
@@ -24,7 +23,6 @@ class PekFirebaseMessagingService : FirebaseMessagingService() {
         val channelId = "pek_series_updates"
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Для Android 8.0 и выше обязательно нужно создавать "Канал уведомлений"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
