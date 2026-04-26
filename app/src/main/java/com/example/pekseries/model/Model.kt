@@ -7,13 +7,14 @@ data class Show(
     val title: String,
     val episode: String? = null,
     val time: String? = null,
+    val dateDisplay: String? = null,
     val imageUrl: String? = null,
     val isNew: Boolean = false,
-    val isWatched: Boolean = false
+    val isWatched: Boolean = false,
+    val isSubscribed: Boolean = false,
+    val airTimeMs: Long = 0L
 ) {
-    fun getPosterUrl(): String {
-        return imageUrl ?: ""
-    }
+    fun getPosterUrl(): String = imageUrl ?: ""
 }
 
 data class Episode(

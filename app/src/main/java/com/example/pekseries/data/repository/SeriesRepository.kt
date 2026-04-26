@@ -13,6 +13,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 class SeriesRepository {
@@ -23,6 +26,7 @@ class SeriesRepository {
     private val API_KEY = BuildConfig.TMDB_API_KEY
 
     private suspend fun filterAndMapTmdbList(dtos: List<TmdbShowDto>, isNew: Boolean = false): List<Show> {
+        val subscribedIds = getSubscribedIds()
         return coroutineScope {
             dtos.take(15).map { dto ->
                 async {
@@ -34,40 +38,48 @@ class SeriesRepository {
                         Show(
                             id = dto.id.toString(),
                             title = dto.name,
-                            episode = dto.first_air_date?.let { "Premiere: $it" } ?: "TMDB",
+                            episode = dto.first_air_date?.let { "Premiere: ${formatDateFull(it)}" } ?: "TMDB",
                             time = dto.vote_average?.let { String.format(Locale.US, "Rating: ★ %.1f", it) } ?: "",
                             imageUrl = dto.getFullPosterUrl(),
                             isNew = isNew,
-                            isWatched = watchedIds.contains(mazeId)
+                            isWatched = watchedIds.contains(mazeId),
+                            isSubscribed = subscribedIds.contains(mazeId)
                         )
-                    } else {
-                        null
-                    }
+                    } else null
                 }
             }.awaitAll().filterNotNull()
         }
     }
 
-    suspend fun getTodayEpisodes(): List<Show> {
+    private fun formatDateFull(dateStr: String): String {
         return try {
-            val response = tmdbApi.getAiringToday(API_KEY)
-            filterAndMapTmdbList(response.results, isNew = true)
-        } catch (e: Exception) { emptyList() }
+            val parts = dateStr.split("-")
+            "${parts[2]}-${parts[1]}-${parts[0]}"
+        } catch (e: Exception) { dateStr }
     }
 
-    suspend fun getPopularToday(): List<Show> {
+    private suspend fun getSubscribedIds(): Set<String> {
+        val userId = auth.currentUser?.uid ?: return emptySet()
         return try {
-            val response = tmdbApi.getTrending(API_KEY)
-            filterAndMapTmdbList(response.results)
-        } catch (e: Exception) { emptyList() }
+            val snapshot = db.collection("users").document(userId).collection("subscriptions").get().await()
+            snapshot.documents.map { it.id }.toSet()
+        } catch (e: Exception) { emptySet() }
     }
 
-    suspend fun getUpcomingPremieres(): List<Show> {
-        return try {
-            val response = tmdbApi.getOnTheAir(API_KEY)
-            filterAndMapTmdbList(response.results)
-        } catch (e: Exception) { emptyList() }
-    }
+    suspend fun getTodayEpisodes() = try {
+        val response = tmdbApi.getAiringToday(API_KEY)
+        filterAndMapTmdbList(response.results, isNew = true)
+    } catch (e: Exception) { emptyList() }
+
+    suspend fun getPopularToday() = try {
+        val response = tmdbApi.getTrending(API_KEY)
+        filterAndMapTmdbList(response.results)
+    } catch (e: Exception) { emptyList() }
+
+    suspend fun getUpcomingPremieres() = try {
+        val response = tmdbApi.getOnTheAir(API_KEY)
+        filterAndMapTmdbList(response.results)
+    } catch (e: Exception) { emptyList() }
 
     suspend fun discoverShows(genreId: String?, year: String?, typeId: String?): List<Show> {
         return try {
@@ -77,6 +89,7 @@ class SeriesRepository {
     }
 
     suspend fun searchSeriesTvMaze(query: String): List<Show> {
+        val subscribedIds = getSubscribedIds()
         return try {
             val results = tvMazeApi.searchSeries(query)
             results.map { item ->
@@ -84,28 +97,22 @@ class SeriesRepository {
                     id = "tvmaze_${item.show.id}",
                     title = item.show.name,
                     imageUrl = item.show.image?.medium ?: "",
-                    episode = item.show.genres?.joinToString(", ") ?: "TV Show",
-                    time = item.show.premiered?.let { "Premiere: $it" } ?: "",
-                    isNew = false,
-                    isWatched = false
+                    episode = item.show.premiered?.let { "Premiere: ${formatDateFull(it)}" } ?: "TV Show",
+                    time = item.show.rating?.average?.let { String.format(Locale.US, "Rating: ★ %.1f", it) } ?: "",
+                    isSubscribed = subscribedIds.contains(item.show.id.toString())
                 )
             }
-        } catch (e: Exception) {
-            emptyList()
-        }
+        } catch (e: Exception) { emptyList() }
     }
 
     suspend fun getShowDetails(tmdbId: String): TmdbShowDetailDto? {
         return try {
             tmdbApi.getShowDetails(tmdbId, API_KEY)
-        } catch (e: Exception) {
-            null
-        }
+        } catch (e: Exception) { null }
     }
 
     suspend fun findTvMazeId(tmdbDetails: TmdbShowDetailDto?): String? {
         if (tmdbDetails == null) return null
-
         val imdbId = tmdbDetails.external_ids?.imdb_id
         val tvdbId = tmdbDetails.external_ids?.tvdb_id
         val showName = tmdbDetails.name
@@ -133,7 +140,6 @@ class SeriesRepository {
                 return match.show.id.toString()
             }
         } catch (e: Exception) { }
-
         return null
     }
 
@@ -145,18 +151,14 @@ class SeriesRepository {
                 val findResponse = tmdbApi.findByExternalId(imdbId, API_KEY)
                 findResponse.tv_results.firstOrNull()?.id?.toString()
             } else null
-        } catch (e: Exception) {
-            null
-        }
+        } catch (e: Exception) { null }
     }
 
     suspend fun getShowEpisodes(tvMazeId: String): List<Episode> {
         return try {
             val episodes = tvMazeApi.getShowEpisodes(tvMazeId)
             episodes.reversed()
-        } catch (e: Exception) {
-            emptyList()
-        }
+        } catch (e: Exception) { emptyList() }
     }
 
     private suspend fun getWatchedEpisodeIdsFromFirebase(): Set<String> {
@@ -164,9 +166,7 @@ class SeriesRepository {
         return try {
             val snapshot = db.collection("users").document(userId).collection("watched_episodes").get().await()
             snapshot.documents.map { it.id }.toSet()
-        } catch (e: Exception) {
-            emptySet()
-        }
+        } catch (e: Exception) { emptySet() }
     }
 
     suspend fun markEpisodeAsWatched(episodeId: String) {
@@ -185,9 +185,7 @@ class SeriesRepository {
         return try {
             val doc = db.collection("users").document(userId).collection("subscriptions").document(tvMazeId).get().await()
             doc.exists()
-        } catch (e: Exception) {
-            false
-        }
+        } catch (e: Exception) { false }
     }
 
     suspend fun toggleSubscription(tvMazeId: String): Boolean {
@@ -206,85 +204,81 @@ class SeriesRepository {
                 docRef.set(data).await()
                 true
             }
-        } catch (e: Exception) {
-            false
-        }
+        } catch (e: Exception) { false }
     }
 
     suspend fun getSubscribedShows(): List<Show> {
         val userId = auth.currentUser?.uid ?: return emptyList()
-
         return try {
             val snapshot = db.collection("users").document(userId).collection("subscriptions").get().await()
-            val showIds = snapshot.documents.map { it.id }
-
-            showIds.mapNotNull { id ->
+            snapshot.documents.mapNotNull { doc ->
+                val id = doc.id
                 try {
                     val dto = tvMazeApi.getShowById(id)
                     Show(
                         id = "tvmaze_${dto.id}",
                         title = dto.name,
                         imageUrl = dto.image?.medium ?: "",
-                        episode = "Subscribed",
-                        time = "",
-                        isNew = false,
-                        isWatched = false
+                        episode = dto.premiered?.let { "Premiere: ${formatDateFull(it)}" } ?: "",
+                        time = dto.rating?.average?.let { String.format(Locale.US, "Rating: ★ %.1f", it) } ?: "",
+                        isSubscribed = true
                     )
-                } catch (e: Exception) {
-                    null
-                }
+                } catch (e: Exception) { null }
             }
-        } catch (e: Exception) {
-            emptyList()
-        }
+        } catch (e: Exception) { emptyList() }
     }
 
     suspend fun getUpcomingSubscribedEpisodes(): List<Show> {
         val userId = auth.currentUser?.uid ?: return emptyList()
-        val today = java.time.LocalDate.now().toString()
+        val now = Instant.now()
+        val timeFormatter = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault())
+        val dateFormatter = DateTimeFormatter.ofPattern("dd-MM").withZone(ZoneId.systemDefault())
 
         return try {
             val snapshot = db.collection("users").document(userId).collection("subscriptions").get().await()
             val showIds = snapshot.documents.map { it.id }
 
-            val upcomingShows = showIds.mapNotNull { id ->
+            val shows = showIds.mapNotNull { id ->
                 try {
                     val showDto = tvMazeApi.getShowById(id)
                     val episodes = tvMazeApi.getShowEpisodes(id)
-                    val nextEpisode = episodes.firstOrNull { it.airdate != null && it.airdate >= today }
+                    val nextEpisode = episodes.firstOrNull { ep ->
+                        ep.airstamp?.let { Instant.parse(it).isAfter(now) } ?: false
+                    }
 
                     if (nextEpisode != null) {
+                        val instant = Instant.parse(nextEpisode.airstamp)
+                        val localTime = timeFormatter.format(instant)
+                        val localDate = dateFormatter.format(instant)
+
                         Show(
                             id = "tvmaze_$id",
                             title = showDto.name,
                             imageUrl = showDto.image?.medium ?: "",
                             episode = "S${nextEpisode.season} E${nextEpisode.number} - ${nextEpisode.name}",
-                            time = nextEpisode.airdate ?: "",
-                            isNew = false,
-                            isWatched = false
+                            time = localTime,
+                            dateDisplay = localDate,
+                            isSubscribed = true,
+                            airTimeMs = instant.toEpochMilli()
                         )
                     } else null
-                } catch (e: Exception) {
-                    null
-                }
+                } catch (e: Exception) { null }
             }
-            upcomingShows.sortedBy { it.time }
-        } catch (e: Exception) {
-            emptyList()
-        }
+            shows.sortedBy { it.airTimeMs }
+        } catch (e: Exception) { emptyList() }
     }
 
     data class EpisodeNotificationData(
         val episodeId: String,
         val showTitle: String,
-        val episodeString: String
+        val episodeString: String,
+        val airTimeInstant: Instant
     )
 
     suspend fun getNewlyAiredEpisodesToNotify(notifiedIds: Set<String>): List<EpisodeNotificationData> {
         val userId = auth.currentUser?.uid ?: return emptyList()
-        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US)
-        val now = System.currentTimeMillis()
-        val timeWindow = 172800000L
+        val now = Instant.now()
+        val twoDaysAgo = now.minusSeconds(172800)
 
         return try {
             val snapshot = db.collection("users").document(userId).collection("subscriptions").get().await()
@@ -301,8 +295,8 @@ class SeriesRepository {
                             false
                         } else if (ep.airstamp != null) {
                             try {
-                                val airTimeMs = sdf.parse(ep.airstamp)?.time ?: Long.MAX_VALUE
-                                airTimeMs <= now && airTimeMs > (now - timeWindow)
+                                val airTime = Instant.parse(ep.airstamp)
+                                airTime.isBefore(now) && airTime.isAfter(twoDaysAgo)
                             } catch (e: Exception) { false }
                         } else {
                             false
@@ -314,16 +308,15 @@ class SeriesRepository {
                             EpisodeNotificationData(
                                 episodeId = ep.id,
                                 showTitle = showDto.name,
-                                episodeString = "S${ep.season} E${ep.number} - ${ep.name}"
+                                episodeString = "S${ep.season} E${ep.number} - ${ep.name}",
+                                airTimeInstant = Instant.parse(ep.airstamp!!)
                             )
                         )
                     }
                 } catch (e: Exception) {}
             }
             newEpisodes
-        } catch (e: Exception) {
-            emptyList()
-        }
+        } catch (e: Exception) { emptyList() }
     }
 
     data class PekNotification(

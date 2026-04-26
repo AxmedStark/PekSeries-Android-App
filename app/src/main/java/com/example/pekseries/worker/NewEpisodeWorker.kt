@@ -11,6 +11,8 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.pekseries.MainActivity
 import com.example.pekseries.data.repository.SeriesRepository
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class NewEpisodeWorker(
     private val appContext: Context,
@@ -21,6 +23,7 @@ class NewEpisodeWorker(
         val repository = SeriesRepository()
         val prefs = appContext.getSharedPreferences("pek_notifications", Context.MODE_PRIVATE)
         val notifiedIds = prefs.getStringSet("notified_episodes", mutableSetOf()) ?: mutableSetOf()
+        val timeFormatter = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault())
 
         return try {
             val newlyAired = repository.getNewlyAiredEpisodesToNotify(notifiedIds)
@@ -29,8 +32,9 @@ class NewEpisodeWorker(
                 val newNotifiedIds = notifiedIds.toMutableSet()
 
                 for (item in newlyAired) {
+                    val localTime = timeFormatter.format(item.airTimeInstant)
                     val title = "New episode: ${item.showTitle}"
-                    val message = item.episodeString
+                    val message = "${item.episodeString} at $localTime"
 
                     repository.saveNotification(title, message)
                     sendNotification(title, message, item.episodeId.hashCode())
@@ -40,7 +44,6 @@ class NewEpisodeWorker(
 
                 prefs.edit().putStringSet("notified_episodes", newNotifiedIds).apply()
             }
-
             Result.success()
         } catch (e: Exception) {
             Result.retry()

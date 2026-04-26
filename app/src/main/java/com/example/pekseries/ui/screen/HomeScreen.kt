@@ -234,5 +234,13 @@ fun HomeShowCard(show: Show, onCardClick: () -> Unit) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(show.time ?: "", color = TextSecondary, fontSize = 12.sp)
         }
+        if (show.isSubscribed) {
+            Icon(
+                imageVector = Icons.Default.CheckCircle,
+                contentDescription = null,
+                tint = Color(0xFF03DAC5),
+                modifier = Modifier.size(24.dp).padding(end = 4.dp)
+            )
+        }
     }
 }
