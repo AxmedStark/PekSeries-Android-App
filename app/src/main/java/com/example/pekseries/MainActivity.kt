@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.example.pekseries.ui.theme.PekSeriesTheme
+import com.example.pekseries.worker.PekAlarmManager
 
 class MainActivity : ComponentActivity() {
 
@@ -24,6 +25,8 @@ class MainActivity : ComponentActivity() {
                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
+
+        PekAlarmManager.scheduleNextAlarm(this)
 
         setContent {
             PekSeriesTheme {

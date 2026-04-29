@@ -27,16 +27,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import coil.compose.AsyncImage
 import com.example.pekseries.ui.theme.*
-import com.example.pekseries.worker.NewEpisodeWorker
+import com.example.pekseries.worker.PekAlarmManager
 import com.google.firebase.auth.FirebaseAuth
-import java.util.concurrent.TimeUnit
 
 @Composable
 fun ProfileScreen(
@@ -54,21 +48,9 @@ fun ProfileScreen(
         prefs.edit().putBoolean("push_enabled", isChecked).apply()
 
         if (isChecked) {
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
-
-            val workRequest = PeriodicWorkRequestBuilder<NewEpisodeWorker>(30, TimeUnit.MINUTES)
-                .setConstraints(constraints)
-                .build()
-
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-                "DailyEpisodeCheck",
-                ExistingPeriodicWorkPolicy.UPDATE,
-                workRequest
-            )
+            PekAlarmManager.scheduleNextAlarm(context)
         } else {
-            WorkManager.getInstance(context).cancelUniqueWork("DailyEpisodeCheck")
+            PekAlarmManager.cancelAlarm(context)
         }
     }
 
@@ -81,19 +63,7 @@ fun ProfileScreen(
         viewModel.loadProfileStats()
 
         if (pushEnabled) {
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
-
-            val workRequest = PeriodicWorkRequestBuilder<NewEpisodeWorker>(30, TimeUnit.MINUTES)
-                .setConstraints(constraints)
-                .build()
-
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-                "DailyEpisodeCheck",
-                ExistingPeriodicWorkPolicy.KEEP,
-                workRequest
-            )
+            PekAlarmManager.scheduleNextAlarm(context)
         }
     }
 

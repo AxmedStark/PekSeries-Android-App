@@ -67,7 +67,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
-    implementation(libs.androidx.work.runtime.ktx)
+//    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.firebase.messaging)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -93,6 +93,4 @@ dependencies {
     implementation(libs.google.firebase.analytics)
     implementation(libs.play.services.auth)
     implementation(libs.androidx.compose.material.icons.extended)
-    implementation(libs.androidx.work.runtime.ktx)
-
 }
