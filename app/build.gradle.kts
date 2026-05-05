@@ -13,6 +13,14 @@ if (localPropertiesFile.exists()) {
 }
 val tmdbApiKey = localProperties.getProperty("TMDB_API_KEY") ?: ""
 
+val versionMajor = 1
+val versionMinor = 4
+val versionPatch = 1
+val versionBuild = 44
+
+val appVersionCode = versionMajor * 100_000_000 + versionMinor * 100_000 + versionPatch * 1_000 + versionBuild
+val appVersionName = "$versionMajor.$versionMinor.$versionPatch.$versionBuild"
+
 android {
     namespace = "com.example.pekseries"
     compileSdk {
@@ -24,9 +32,10 @@ android {
     defaultConfig {
         applicationId = "com.example.pekseries"
         minSdk = 26
+        //noinspection OldTargetApi
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "TMDB_API_KEY", "\"$tmdbApiKey\"")
