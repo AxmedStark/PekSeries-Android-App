@@ -240,6 +240,8 @@ class SeriesRepository {
 
             val shows = showIds.mapNotNull { id ->
                 try {
+                    kotlinx.coroutines.delay(500)
+
                     val showDto = tvMazeApi.getShowById(id)
                     val episodes = tvMazeApi.getShowEpisodes(id)
                     val nextEpisode = episodes.firstOrNull { ep ->
@@ -287,6 +289,8 @@ class SeriesRepository {
 
             for (id in showIds) {
                 try {
+                    kotlinx.coroutines.delay(300)
+
                     val showDto = tvMazeApi.getShowById(id)
                     val episodes = tvMazeApi.getShowEpisodes(id)
 
@@ -313,7 +317,9 @@ class SeriesRepository {
                             )
                         )
                     }
-                } catch (e: Exception) {}
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
             newEpisodes
         } catch (e: Exception) { emptyList() }
