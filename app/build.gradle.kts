@@ -16,7 +16,7 @@ val tmdbApiKey = localProperties.getProperty("TMDB_API_KEY") ?: ""
 val versionMajor = 1
 val versionMinor = 4
 val versionPatch = 1
-val versionBuild = 44
+val versionBuild = 46
 
 val appVersionCode = versionMajor * 100_000_000 + versionMinor * 100_000 + versionPatch * 1_000 + versionBuild
 val appVersionName = "$versionMajor.$versionMinor.$versionPatch.$versionBuild"
@@ -102,4 +102,11 @@ dependencies {
     implementation(libs.google.firebase.analytics)
     implementation(libs.play.services.auth)
     implementation(libs.androidx.compose.material.icons.extended)
+
+    // Умное логирование
+    implementation(libs.timber)
+
+    // Chucker - сетевой инспектор (показывает UI только в debug-версии)
+    debugImplementation(libs.library)
+    releaseImplementation(libs.library.no.op)
 }
