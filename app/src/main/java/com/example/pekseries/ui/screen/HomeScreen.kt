@@ -20,7 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.pekseries.model.Show
 import com.example.pekseries.ui.theme.*
@@ -30,7 +30,7 @@ import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = viewModel(),
+    viewModel: HomeViewModel = hiltViewModel(),
     onNavigateToDetail: (String) -> Unit = {},
     onNavigateToNotifications: () -> Unit = {}
 ) {

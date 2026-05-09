@@ -20,7 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.pekseries.ui.theme.*
 import com.example.pekseries.ui.viewmodel.NotificationsViewModel
 import java.text.SimpleDateFormat
@@ -30,7 +30,7 @@ import java.util.*
 @Composable
 fun NotificationsScreen(
     onBack: () -> Unit,
-    viewModel: NotificationsViewModel = viewModel()
+    viewModel: NotificationsViewModel = hiltViewModel()
 ) {
     val notifications by viewModel.notifications.collectAsState()
 

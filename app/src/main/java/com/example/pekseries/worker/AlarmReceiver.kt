@@ -10,13 +10,20 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.pekseries.MainActivity
 import com.example.pekseries.data.repository.SeriesRepository
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+@AndroidEntryPoint
 class AlarmReceiver : BroadcastReceiver() {
+
+    @Inject
+    lateinit var repository: SeriesRepository
+
     override fun onReceive(context: Context, intent: Intent) {
         val profilePrefs = context.getSharedPreferences("pek_prefs", Context.MODE_PRIVATE)
         val pushEnabled = profilePrefs.getBoolean("push_enabled", true)
@@ -25,7 +32,6 @@ class AlarmReceiver : BroadcastReceiver() {
 
         val pendingResult = goAsync()
 
-        val repository = SeriesRepository()
         val scope = CoroutineScope(Dispatchers.IO)
 
         scope.launch {

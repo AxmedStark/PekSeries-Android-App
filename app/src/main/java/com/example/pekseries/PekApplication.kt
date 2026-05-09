@@ -1,9 +1,10 @@
 package com.example.pekseries
 
 import android.app.Application
-import com.example.pekseries.data.NetworkClient
+import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 
+@HiltAndroidApp
 class PekApplication : Application() {
     override fun onCreate() {
         super.onCreate()
@@ -12,6 +13,5 @@ class PekApplication : Application() {
             Timber.plant(Timber.DebugTree())
         }
 
-        NetworkClient.init(this)
     }
 }

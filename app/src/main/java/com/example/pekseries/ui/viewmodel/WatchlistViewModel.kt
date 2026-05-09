@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pekseries.data.repository.SeriesRepository
 import com.example.pekseries.model.Show
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,8 +13,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class WatchlistViewModel : ViewModel() {
-    private val repository = SeriesRepository()
+@HiltViewModel
+class WatchlistViewModel @Inject constructor(
+    private val repository: SeriesRepository
+) : ViewModel() {
 
     private val _subscriptions = MutableStateFlow<List<Show>>(emptyList())
     val subscriptions: StateFlow<List<Show>> = _subscriptions.asStateFlow()

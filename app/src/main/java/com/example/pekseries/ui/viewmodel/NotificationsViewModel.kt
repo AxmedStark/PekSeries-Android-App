@@ -4,12 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pekseries.data.repository.SeriesRepository.PekNotification
 import com.example.pekseries.data.repository.SeriesRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class NotificationsViewModel : ViewModel() {
-    private val repository = SeriesRepository()
+@HiltViewModel
+class NotificationsViewModel @Inject constructor(
+    private val repository: SeriesRepository
+) : ViewModel() {
     private val _notifications = MutableStateFlow<List<PekNotification>>(emptyList())
     val notifications = _notifications.asStateFlow()
 

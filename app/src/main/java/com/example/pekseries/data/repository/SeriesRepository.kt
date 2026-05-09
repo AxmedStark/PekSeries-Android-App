@@ -1,7 +1,8 @@
 package com.example.pekseries.data.repository
 
 import com.example.pekseries.BuildConfig
-import com.example.pekseries.data.NetworkClient
+import com.example.pekseries.data.remote.TmdbApi
+import com.example.pekseries.data.remote.TvMazeApi
 import com.example.pekseries.data.remote.TmdbShowDetailDto
 import com.example.pekseries.data.remote.TmdbShowDto
 import com.example.pekseries.model.Episode
@@ -12,15 +13,17 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class SeriesRepository {
-    private val tmdbApi = NetworkClient.tmdbApi
-    private val tvMazeApi = NetworkClient.tvMazeApi
+class SeriesRepository @Inject constructor(
+    private val tmdbApi: TmdbApi,
+    private val tvMazeApi: TvMazeApi
+) {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private val API_KEY = BuildConfig.TMDB_API_KEY

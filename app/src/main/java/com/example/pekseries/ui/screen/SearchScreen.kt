@@ -20,7 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.pekseries.ui.theme.CardBg
 import com.example.pekseries.ui.theme.PekYellow
@@ -32,7 +32,7 @@ import com.example.pekseries.ui.viewmodel.SearchViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
-    searchViewModel: SearchViewModel = viewModel(),
+    searchViewModel: SearchViewModel = hiltViewModel(),
     onNavigateToDetail: (String) -> Unit = {}
 ) {
     val query by searchViewModel.searchQuery.collectAsState()

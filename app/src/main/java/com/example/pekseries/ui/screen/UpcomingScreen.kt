@@ -19,16 +19,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pekseries.ui.theme.*
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.pekseries.ui.viewmodel.WatchlistViewModel
 import com.example.pekseries.model.Show
 
 @Composable
-fun UpcomingScreen(
+fun WatchListScreen(
     onNavigateToDetail: (String) -> Unit = {},
-    viewModel: WatchlistViewModel = viewModel()
+    viewModel: WatchlistViewModel = hiltViewModel()
 ) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Upcoming", "Subscriptions")

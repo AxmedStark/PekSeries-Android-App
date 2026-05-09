@@ -21,7 +21,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.pekseries.model.Episode
 import com.example.pekseries.ui.theme.DarkBg
@@ -34,7 +34,7 @@ import java.util.Locale
 fun DetailScreen(
     showId: String,
     onBackClick: () -> Unit,
-    viewModel: DetailViewModel = viewModel()
+    viewModel: DetailViewModel = hiltViewModel()
 ) {
     val episodes by viewModel.episodes.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()

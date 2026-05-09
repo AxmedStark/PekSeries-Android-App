@@ -6,11 +6,14 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.example.pekseries.ui.theme.PekSeriesTheme
 import com.example.pekseries.worker.PekAlarmManager
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val requestPermissionLauncher = registerForActivityResult(
@@ -28,6 +31,7 @@ class MainActivity : ComponentActivity() {
 
         PekAlarmManager.scheduleNextAlarm(this)
 
+        enableEdgeToEdge()
         setContent {
             PekSeriesTheme {
                 PekSeriesApp()

@@ -1,6 +1,5 @@
 package com.example.pekseries.ui.screen
 
-import android.app.Activity
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts

@@ -106,7 +106,7 @@ fun PekSeriesMainContent(
             when (selectedScreen) {
                 0 -> HomeScreen(onNavigateToDetail = onNavigateToDetail, onNavigateToNotifications = onNavigateToNotifications)
                 1 -> SearchScreen(onNavigateToDetail = onNavigateToDetail)
-                2 -> UpcomingScreen(onNavigateToDetail = onNavigateToDetail)
+                2 -> WatchListScreen(onNavigateToDetail = onNavigateToDetail)
                 3 -> ProfileScreen(onLogout = onLogout)
             }
         }

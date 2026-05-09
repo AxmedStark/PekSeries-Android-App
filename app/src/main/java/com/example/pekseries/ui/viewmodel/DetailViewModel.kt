@@ -5,13 +5,17 @@ import androidx.lifecycle.viewModelScope
 import com.example.pekseries.data.remote.TmdbShowDetailDto
 import com.example.pekseries.data.repository.SeriesRepository
 import com.example.pekseries.model.Episode
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class DetailViewModel : ViewModel() {
-    private val repository = SeriesRepository()
+@HiltViewModel
+class DetailViewModel @Inject constructor(
+    private val repository: SeriesRepository
+) : ViewModel() {
 
     private val _episodes = MutableStateFlow<List<Episode>>(emptyList())
     val episodes: StateFlow<List<Episode>> = _episodes.asStateFlow()
