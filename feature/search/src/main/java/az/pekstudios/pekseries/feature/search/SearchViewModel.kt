@@ -1,0 +1,52 @@
+package az.pekstudios.pekseries.feature.search
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import az.pekstudios.pekseries.core.model.Show
+import az.pekstudios.pekseries.core.network.repository.SeriesRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class SearchViewModel @Inject constructor(
+    private val repository: SeriesRepository
+) : ViewModel() {
+    private var searchJob: Job? = null
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery
+
+    private val _searchResults = MutableStateFlow<List<Show>>(emptyList())
+    val searchResults: StateFlow<List<Show>> = _searchResults
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    fun onQueryChange(query: String) {
+        _searchQuery.value = query
+        searchJob?.cancel()
+
+        searchJob = viewModelScope.launch {
+            delay(500)
+
+            if (query.length > 2) {
+                _isLoading.value = true
+                try {
+                    val results = repository.searchSeriesTvMaze(query)
+                    _searchResults.value = results
+                } catch (e: Exception) {
+                    _searchResults.value = emptyList()
+                } finally {
+                    _isLoading.value = false
+                }
+            } else {
+                _searchResults.value = emptyList()
+            }
+        }
+    }
+}

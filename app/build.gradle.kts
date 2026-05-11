@@ -16,23 +16,19 @@ if (localPropertiesFile.exists()) {
 val tmdbApiKey = localProperties.getProperty("TMDB_API_KEY") ?: ""
 
 val versionMajor = 1
-val versionMinor = 5
+val versionMinor = 6
 val versionPatch = 0
-val versionBuild = 47
+val versionBuild = 48
 
 val appVersionCode = versionMajor * 100_000_000 + versionMinor * 100_000 + versionPatch * 1_000 + versionBuild
 val appVersionName = "$versionMajor.$versionMinor.$versionPatch.$versionBuild"
 
 android {
-    namespace = "com.example.pekseries"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    namespace = "az.pekstudios.pekseries"
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.pekseries"
+        applicationId = "az.pekstudios.pekseries"
         minSdk = 26
         //noinspection OldTargetApi
         targetSdk = 36
@@ -74,6 +70,21 @@ kotlin {
 }
 
 dependencies {
+    // core
+    implementation(project(":core:network"))
+    implementation(project(":core:model"))
+    implementation(project(":core:ui"))
+    implementation(project(":core:work"))
+
+    // feature
+    implementation(project(":feature:auth"))
+    implementation(project(":feature:detail"))
+    implementation(project(":feature:home"))
+    implementation(project(":feature:notifications"))
+    implementation(project(":feature:profile"))
+    implementation(project(":feature:search"))
+    implementation(project(":feature:watchlist"))
+
     // Core and Compose
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -88,18 +99,12 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
-    // Network and Retrofit
-    implementation(libs.retrofit)
-    implementation(libs.converter.gson)
-    implementation(libs.kotlinx.coroutines.android)
-
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
-    implementation(libs.google.firebase.analytics)
     implementation(libs.play.services.auth)
 
     // Media
@@ -115,7 +120,7 @@ dependencies {
 
     // Hilt DI - KSP
     implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
+    ksp(libs.hilt.android.compiler)
 
     // Hilt for Jetpack Compose and ViewModel
     implementation(libs.androidx.hilt.navigation.compose)

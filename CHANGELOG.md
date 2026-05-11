@@ -5,6 +5,19 @@ All notable changes to the PekSeries project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-05-12
+### Added
+- **Multi-module Architecture:** Completely restructured the project into independent modules to improve build speed, scalability, and code isolation.
+- Created core functional modules: `:core:network`, `:core:model`, `:core:ui`, and `:core:work`.
+- Extracted UI screens into fully isolated feature modules: `:feature:search`, `:feature:watchlist`, `:feature:profile`, `:feature:home`, and `:feature:auth`.
+
+### Changed
+- The `:app` module now acts solely as an application shell, handling only DI initialization (`PekApplication`), the entry point (`MainActivity`), and global Navigation (`PekSeriesApp`).
+- Fixed Hilt ViewModel injection crashes by migrating from `viewModel()` to `hiltViewModel()` across all Jetpack Compose screens.
+
+### Removed
+- Removed the `USE_EXACT_ALARM` permission from the manifest to strictly comply with Google Play Store policies (the app now safely relies solely on `SCHEDULE_EXACT_ALARM`).
+
 ## [1.5.0] - 2026-05-10
 ### Added
 - **Dagger Hilt (Dependency Injection):** Migrated the app to a modern DI architecture. Created `PekApplication` (`@HiltAndroidApp`) and extracted `NetworkModule` to manage Retrofit and OkHttp clients.

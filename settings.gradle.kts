@@ -24,3 +24,14 @@ dependencyResolutionManagement {
 
 rootProject.name = "PekSeries"
 include(":app")
+include(":core:network")
+include(":core:model")
+include(":core:ui")
+include(":feature:search")
+include(":feature:watchlist")
+include(":feature:profile")
+include(":feature:auth")
+include(":feature:home")
+include(":feature:notifications")
+include(":feature:detail")
+include(":core:work")
