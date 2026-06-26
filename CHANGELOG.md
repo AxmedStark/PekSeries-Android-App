@@ -5,6 +5,22 @@ All notable changes to the PekSeries project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-06-24
+### Added
+- **Cloud Push Notifications:** Implemented `PekFirebaseMessagingService` to receive real-time push notifications using Firebase Cloud Messaging (FCM).
+- **Notification Deep Linking:** Clicking on a new episode notification now automatically navigates the user directly to that specific show's `DetailScreen`.
+- **FCM Topic Synchronization:** Added `syncSubscriptionsWithFcm()` in the repository to automatically sync the user's Firestore watchlist with FCM topics (e.g., `show_{id}`).
+- **Runtime Permissions:** Added `POST_NOTIFICATIONS` permission request in `MainActivity` to fully support Android 13 (API 33) and above.
+- **Serverless Backend:** Deployed a Firebase Cloud Function (`checkNewEpisodes`) via Google Cloud Shell that checks the TVMaze API hourly and triggers topic-based push notifications.
+
+### Changed
+- **Notification Architecture:** Migrated the episode release tracking from a client-side "pull" model (local background work) to a highly efficient server-side "push" model.
+- Updated `PekSeriesApp` navigation and `MainActivity` to accept and process `showId` arguments from incoming intents.
+
+### Removed
+- Removed local alarm scheduling logic: completely deleted `AlarmReceiver.kt`, `PekAlarmManager.kt`, and `BootReceiver.kt`.
+- Removed `SCHEDULE_EXACT_ALARM` permission from `AndroidManifest.xml` to strictly comply with updated Google Play Store policies.
+
 ## [1.6.0] - 2026-05-12
 ### Added
 - **Multi-module Architecture:** Completely restructured the project into independent modules to improve build speed, scalability, and code isolation.

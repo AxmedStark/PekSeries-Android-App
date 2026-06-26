@@ -9,10 +9,12 @@ import az.pekstudios.pekseries.core.model.Show
 import az.pekstudios.pekseries.core.model.Episode
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import timber.log.Timber
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -209,10 +211,12 @@ class SeriesRepository @Inject constructor(
     suspend fun toggleSubscription(tvMazeId: String): Boolean {
         val userId = auth.currentUser?.uid ?: return false
         val docRef = db.collection("users").document(userId).collection("subscriptions").document(tvMazeId)
+
         return try {
             val doc = docRef.get().await()
             if (doc.exists()) {
                 docRef.delete().await()
+                FirebaseMessaging.getInstance().unsubscribeFromTopic("show_$tvMazeId").await()
                 false
             } else {
                 val data = hashMapOf(
@@ -220,6 +224,7 @@ class SeriesRepository @Inject constructor(
                     "addedAt" to System.currentTimeMillis()
                 )
                 docRef.set(data).await()
+                FirebaseMessaging.getInstance().subscribeToTopic("show_$tvMazeId").await()
                 true
             }
         } catch (e: Exception) { false }
@@ -301,60 +306,30 @@ class SeriesRepository @Inject constructor(
         val airTimeInstant: Instant
     )
 
-    suspend fun getNewlyAiredEpisodesToNotify(notifiedIds: Set<String>): List<EpisodeNotificationData> {
-        val userId = auth.currentUser?.uid ?: return emptyList()
-        val now = Instant.now()
-        val twoDaysAgo = now.minusSeconds(172800)
-
-        return try {
-            val snapshot = db.collection("users").document(userId).collection("subscriptions").get().await()
-            val showIds = snapshot.documents.map { it.id }
-            val newEpisodes = mutableListOf<EpisodeNotificationData>()
-
-            for (id in showIds) {
-                try {
-                    kotlinx.coroutines.delay(300)
-
-                    val showDto = tvMazeApi.getShowById(id)
-                    val episodes = tvMazeApi.getShowEpisodes(id)
-
-                    val justAired = episodes.filter { ep ->
-                        if (notifiedIds.contains(ep.id)) {
-                            false
-                        } else if (ep.airstamp != null) {
-                            try {
-                                val airTime = Instant.parse(ep.airstamp)
-                                airTime.isBefore(now) && airTime.isAfter(twoDaysAgo)
-                            } catch (e: Exception) { false }
-                        } else {
-                            false
-                        }
-                    }
-
-                    justAired.forEach { ep ->
-                        newEpisodes.add(
-                            EpisodeNotificationData(
-                                episodeId = ep.id,
-                                showTitle = showDto.name,
-                                episodeString = "S${ep.season} E${ep.number} - ${ep.name}",
-                                airTimeInstant = Instant.parse(ep.airstamp!!)
-                            )
-                        )
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-            newEpisodes
-        } catch (e: Exception) { emptyList() }
-    }
-
     data class PekNotification(
         val id: String = "",
         val title: String = "",
         val message: String = "",
         val timestamp: Long = 0
     )
+
+    suspend fun syncSubscriptionsWithFcm() {
+        val userId = auth.currentUser?.uid ?: return
+
+        // Берем все ID сериалов, на которые юзер уже подписан в Firestore
+        val subscriptions = db.collection("users")
+            .document(userId)
+            .collection("subscriptions")
+            .get()
+            .await()
+
+        subscriptions.documents.forEach { doc ->
+            val showId = doc.id
+            // Подписываем на топик в FCM
+            FirebaseMessaging.getInstance().subscribeToTopic("show_$showId")
+                .addOnFailureListener { e -> Timber.e(e, "Ошибка подписки на топик $showId") }
+        }
+    }
 
     suspend fun saveNotification(title: String, message: String) {
         val userId = auth.currentUser?.uid ?: return

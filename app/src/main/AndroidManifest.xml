@@ -17,14 +17,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PekSeries">
 
-        <receiver android:name=".core.work.AlarmReceiver" android:enabled="true" android:exported="false" />
-
-        <receiver android:name=".core.work.BootReceiver" android:enabled="true" android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -37,8 +29,8 @@
         </activity>
 
         <service
-            android:name=".service.PekFirebaseMessagingService"
-            android:exported="false">
+            android:name="az.pekstudios.pekseries.core.work.PekFirebaseMessagingService"
+            android:exported="true">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>

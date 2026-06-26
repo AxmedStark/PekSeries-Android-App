@@ -26,6 +26,9 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:network"))
 
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
