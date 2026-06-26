@@ -23,3 +23,17 @@ captures/
 *.keystore
 google-services.json
 /app/google-services.json
+functions/node_modules/
+functions/lib/
+firebase-key.json
+functions/.firebase/
+functions/package-lock.json
+.firebase/
+.secret
+*.log
+# Секреты
+*.json
+firebase-debug.log
+/functions/index.js
+/functions/package.json
+/functions/package-lock.json

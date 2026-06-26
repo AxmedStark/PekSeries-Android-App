@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import az.pekstudios.pekseries.core.ui.theme.*
-import az.pekstudios.pekseries.core.work.PekAlarmManager
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -44,12 +43,6 @@ fun ProfileScreen(
     val onTogglePush = { isChecked: Boolean ->
         pushEnabled = isChecked
         prefs.edit().putBoolean("push_enabled", isChecked).apply()
-
-        if (isChecked) {
-            PekAlarmManager.scheduleNextAlarm(context)
-        } else {
-            PekAlarmManager.cancelAlarm(context)
-        }
     }
 
     val currentUser = FirebaseAuth.getInstance().currentUser

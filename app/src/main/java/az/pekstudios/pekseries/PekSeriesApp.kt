@@ -30,12 +30,18 @@ import az.pekstudios.pekseries.feature.notifications.NotificationsScreen
 import az.pekstudios.pekseries.feature.home.HomeScreen
 
 @Composable
-fun PekSeriesApp() {
+fun PekSeriesApp(showIdFromPush: String? = null) {
     val loginViewModel: LoginViewModel = viewModel()
     val isLoggedIn by loginViewModel.isUserLoggedIn.collectAsState()
 
     if (isLoggedIn) {
         val navController = rememberNavController()
+
+        LaunchedEffect(showIdFromPush) {
+            if (!showIdFromPush.isNullOrEmpty()) {
+                navController.navigate("detail/$showIdFromPush")
+            }
+        }
 
         NavHost(navController = navController, startDestination = "main") {
 
