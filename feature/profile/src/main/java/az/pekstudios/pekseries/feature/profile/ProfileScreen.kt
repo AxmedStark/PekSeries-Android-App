@@ -1,6 +1,7 @@
 package az.pekstudios.pekseries.feature.profile
 
 import android.content.Context
+import android.content.pm.PackageManager
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -32,7 +33,7 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
-    viewModel: ProfileViewModel = hiltViewModel() // Теперь используем правильную VM
+    viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val stats by viewModel.profileStats.collectAsState()
@@ -46,29 +47,43 @@ fun ProfileScreen(
     }
 
     val currentUser = FirebaseAuth.getInstance().currentUser
-    val userName = currentUser?.displayName ?: "Киноман"
+    val userName = currentUser?.displayName ?: "Pek"
     val userEmail = currentUser?.email ?: ""
     val photoUrl = currentUser?.photoUrl
 
-    // Статистика загружается автоматически при создании ViewModel (блок init)
+    val appVersion = remember {
+        try {
+//            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+//            pInfo.versionName ?: ""
+            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            val fullVersion = pInfo.versionName ?: ""
+            fullVersion.split(".").take(3).joinToString(".")
+        } catch (e: PackageManager.NameNotFoundException) {
+            "Unknown"
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF121212)) // Базовый темный фон
+            .background(Color(0xFF121212))
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top Bar
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
             Text("Profile", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            Icon(Icons.Filled.Settings, null, tint = Color.White)
+            Text(
+                text = "v$appVersion",
+                fontWeight = FontWeight.Bold,
+                color = Color.Gray,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
         }
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        // Avatar
         Box(
             modifier = Modifier
                 .size(100.dp)
@@ -95,7 +110,6 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        // Stats Row
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             StatCard(stats.first.toString(), "SERIES")
             StatCard(stats.second.toString(), "EPISODES")
@@ -114,6 +128,7 @@ fun ProfileScreen(
 
         PreferenceItem(
             text = "Push Notifications",
+
             icon = Icons.Filled.Notifications,
             checked = pushEnabled,
             onCheckedChange = { isChecked -> onTogglePush(isChecked) }
@@ -121,12 +136,20 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Logout Button
+//        Text(
+//            text = "v$appVersion",
+//            color = Color.Gray,
+//            fontSize = 12.sp,
+//            modifier = Modifier.padding(bottom = 8.dp)
+//        )
+
         OutlinedButton(
             onClick = onLogout,
             border = BorderStroke(1.dp, Primary.copy(alpha = 0.5f)),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = PekYellow),
-            modifier = Modifier.fillMaxWidth().height(50.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
         ) {
             Icon(Icons.AutoMirrored.Filled.ExitToApp, null)
             Spacer(modifier = Modifier.width(8.dp))

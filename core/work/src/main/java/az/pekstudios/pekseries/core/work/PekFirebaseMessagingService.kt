@@ -3,31 +3,44 @@ package az.pekstudios.pekseries.core.work
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.google.firebase.messaging.FirebaseMessaging
+import az.pekstudios.pekseries.core.ui.R
+import az.pekstudios.pekseries.feature.notifications.data.NotificationDao
+import az.pekstudios.pekseries.feature.notifications.data.NotificationEntity
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import javax.inject.Inject
 import kotlin.random.Random
 
+@AndroidEntryPoint
 class PekFirebaseMessagingService : FirebaseMessagingService() {
+
+    @Inject
+    lateinit var notificationDao: NotificationDao
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
-        Timber.d("Получен Push от Cloud Functions: ${message.data}")
 
-        // Читаем данные, которые пришлет наш сервер
-        val title = message.notification?.title ?: message.data["title"] ?: "Новая серия!"
-        val body = message.notification?.body ?: message.data["body"] ?: ""
+        val title = message.data["title"] ?: "PekSeries"
+        val body = message.data["body"] ?: "New update!"
+        val showId = message.data["showId"]
+
+        CoroutineScope(Dispatchers.IO).launch {
+            notificationDao.insertNotification(
+                NotificationEntity(title = title, body = body, showId = showId)
+            )
+        }
 
         showNotification(title, body)
     }
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        // Срабатывает при установке приложения. Для топиков токен сохранять не обязательно,
-        // но можно залогировать.
         Timber.d("Новый FCM токен: $token")
     }
 
@@ -35,18 +48,15 @@ class PekFirebaseMessagingService : FirebaseMessagingService() {
         val channelId = "pekseries_new_episodes"
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Создаем канал для Android 8.0+
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Новые серии",
-                NotificationManager.IMPORTANCE_HIGH
-            )
-            notificationManager.createNotificationChannel(channel)
-        }
+        val channel = NotificationChannel(
+            channelId,
+            "Новые серии",
+            NotificationManager.IMPORTANCE_HIGH
+        )
+        notificationManager.createNotificationChannel(channel)
 
         val notification = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(android.R.drawable.ic_popup_reminder) // Замени на свою иконку!
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import az.pekstudios.pekseries.core.network.repository.SeriesRepository.PekNotification
+import az.pekstudios.pekseries.feature.notifications.data.NotificationEntity
 import az.pekstudios.pekseries.core.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -75,7 +75,7 @@ fun NotificationsScreen(
 }
 
 @Composable
-fun NotificationItem(notify: PekNotification) {
+fun NotificationItem(notify: NotificationEntity) {
     val date = SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()).format(Date(notify.timestamp))
 
     Row(
@@ -94,7 +94,7 @@ fun NotificationItem(notify: PekNotification) {
         Spacer(modifier = Modifier.width(16.dp))
         Column {
             Text(notify.title, color = PekYellow, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text(notify.message, color = Color.White, fontSize = 13.sp)
+            Text(notify.body, color = Color.White, fontSize = 13.sp)
             Text(date, color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(top = 4.dp))
         }
     }

@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import az.pekstudios.pekseries.core.network.repository.SeriesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,21 +25,34 @@ class ProfileViewModel @Inject constructor(
         loadProfileStats()
     }
 
-    fun loadProfileStats() {
+    private fun loadProfileStats() {
         viewModelScope.launch {
-            try {
-                val subscribedShows = repository.getSubscribedShows()
-                val seriesCount = subscribedShows.size
-
-                // Здесь можно добавить логику подсчета эпизодов и часов,
-                // если она есть в репозитории. Пока ставим заглушку или твои расчеты.
-                val episodesCount = seriesCount * 10 // Пример
-                val hoursCount = (episodesCount * 45) / 60 // Пример: 45 мин на серию
-
-                _profileStats.value = Triple(seriesCount, episodesCount, hoursCount)
-            } catch (e: Exception) {
-                // Обработка ошибки
+            val subs = repository.getSubscribedShows()
+            if (subs.isEmpty()) {
+                _profileStats.value = Triple(0, 0, 0)
+                return@launch
             }
+
+            val results = coroutineScope {
+                subs.map { show ->
+                    async {
+                        try {
+                            val cleanId = show.id.removePrefix("tvmaze_")
+                            val episodes = repository.getShowEpisodes(cleanId)
+
+                            val totalMinutes = episodes.sumOf { it.runtime ?: 45 }
+                            Pair(episodes.size, totalMinutes)
+                        } catch (e: Exception) {
+                            Pair(0, 0)
+                        }
+                    }
+                }.awaitAll()
+            }
+
+            val totalEpisodes = results.sumOf { it.first }
+            val totalHours = results.sumOf { it.second } / 60
+
+            _profileStats.value = Triple(subs.size, totalEpisodes, totalHours)
         }
     }
 }

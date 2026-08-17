@@ -16,8 +16,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -40,18 +43,27 @@ fun SearchScreen(
     val results by searchViewModel.searchResults.collectAsState()
     val isLoading by searchViewModel.isLoading.collectAsState()
 
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     Column(modifier = Modifier.fillMaxSize()) {
         OutlinedTextField(
             value = query,
             onValueChange = { searchViewModel.onQueryChange(it) },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp)
+                .focusRequester(focusRequester),
+            shape = RoundedCornerShape(24.dp),
             placeholder = { Text("Find a show...", color = Color.Gray) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
             trailingIcon = {
                 if (query.isNotEmpty()) {
-                    IconButton(onClick = { searchViewModel.onQueryChange("") }) {
+                    IconButton(onClick = {
+                        searchViewModel.onQueryChange("")
+                        focusRequester.requestFocus()
+                        keyboardController?.show()
+                    }) {
                         Icon(Icons.Default.Clear, contentDescription = null, tint = Color.Gray)
                     }
                 }
@@ -59,6 +71,7 @@ fun SearchScreen(
             singleLine = true,
             colors = colors(
                 focusedIndicatorColor = Primary,
+                unfocusedIndicatorColor = Primary.copy(alpha = 0.5f),
                 cursorColor = PekYellow,
                 unfocusedContainerColor = Color.Transparent,
                 focusedContainerColor = Color.Transparent,
@@ -91,7 +104,10 @@ fun SearchScreen(
                     AsyncImage(
                         model = show.getPosterUrl(),
                         contentDescription = null,
-                        modifier = Modifier.size(60.dp, 80.dp).clip(RoundedCornerShape(8.dp)).background(Color.DarkGray),
+                        modifier = Modifier
+                            .size(60.dp, 80.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.DarkGray),
                         contentScale = ContentScale.Crop
                     )
                     Spacer(modifier = Modifier.width(16.dp))
@@ -106,7 +122,9 @@ fun SearchScreen(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,
                             tint = Color(0xFF03DAC5),
-                            modifier = Modifier.size(24.dp).padding(end = 4.dp)
+                            modifier = Modifier
+                                .size(24.dp)
+                                .padding(end = 4.dp)
                         )
                     }
                 }

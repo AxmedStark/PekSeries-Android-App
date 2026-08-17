@@ -21,7 +21,8 @@ data class Episode(
     val season: Int,
     val number: Int,
     val airdate: String? = null,
-    val airstamp: String? = null
+    val airstamp: String? = null,
+    val runtime: Int? = null
 )
 
 data class SearchResponseItem(
@@ -60,5 +61,7 @@ data class TvMazeEpisodeDto(
     val number: Int,
     val airdate: String?,
     val airtime: String?,
+    val airstamp: String?,
+    val runtime: Int? = null,
     val show: TvMazeShowDto
 )

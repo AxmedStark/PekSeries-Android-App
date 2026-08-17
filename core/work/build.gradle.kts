@@ -25,6 +25,8 @@ kotlin {
 dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:network"))
+    implementation(project(":core:ui"))
+    implementation(project(":feature:notifications"))
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)

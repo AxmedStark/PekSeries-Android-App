@@ -22,36 +22,49 @@ class WatchlistViewModel @Inject constructor(
     private val _subscriptions = MutableStateFlow<List<Show>>(emptyList())
     val subscriptions: StateFlow<List<Show>> = _subscriptions.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
     private val _todayEpisodes = MutableStateFlow<List<Show>>(emptyList())
     val todayEpisodes: StateFlow<List<Show>> = _todayEpisodes.asStateFlow()
+
+    private val _isInitialLoading = MutableStateFlow(true)
+    val isInitialLoading: StateFlow<Boolean> = _isInitialLoading.asStateFlow()
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     private val _profileStats = MutableStateFlow(Triple(0, 0, 0))
     val profileStats: StateFlow<Triple<Int, Int, Int>> = _profileStats.asStateFlow()
 
     init {
-        loadTodayEpisodes()
+        loadData(isRefresh = false)
+        loadProfileStats()
     }
 
-    fun loadTodayEpisodes() {
+    fun loadData(isRefresh: Boolean = false) {
         viewModelScope.launch {
-            _isLoading.value = true
-            _todayEpisodes.value = repository.getUpcomingSubscribedEpisodes()
-            _isLoading.value = false
+            if (isRefresh) {
+                _isRefreshing.value = true
+            } else if (_todayEpisodes.value.isEmpty() && _subscriptions.value.isEmpty()) {
+                _isInitialLoading.value = true
+            }
+
+            try {
+                coroutineScope {
+                    val upcomingDeferred = async { repository.getUpcomingSubscribedEpisodes() }
+                    val subscriptionsDeferred = async { repository.getSubscribedShows() }
+
+                    _todayEpisodes.value = upcomingDeferred.await()
+                    _subscriptions.value = subscriptionsDeferred.await()
+                }
+            } catch (e: Exception) {
+
+            } finally {
+                _isInitialLoading.value = false
+                _isRefreshing.value = false
+            }
         }
     }
 
-    fun loadSubscriptions() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _subscriptions.value = repository.getSubscribedShows()
-            _isLoading.value = false
-        }
-    }
-
-    fun loadProfileStats() {
+    private fun loadProfileStats() {
         viewModelScope.launch {
             val subs = repository.getSubscribedShows()
             if (subs.isEmpty()) {

@@ -5,6 +5,63 @@ All notable changes to the PekSeries project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.3] - 2026-06-29
+### Added
+- **Optimized Network Layer:** Reimplemented `SeriesRepository` methods using `coroutineScope` and `async/await` to perform parallel API requests.
+- **Request Throttling:** Implemented `chunked(5)` batching for TVMaze API requests to prevent `429 Too Many Requests` errors while maintaining high performance.
+
+### Fixed
+- **Episode Metadata:** Fixed an issue where episode release dates and times were showing as "TBA" in `DetailScreen` by correctly mapping `airdate` and `airstamp` fields in `SeriesRepository`.
+
+## [1.8.2] - 2026-06-29
+### Fixed
+- **Google Authentication:** Fixed an issue where logging out and attempting to log back in via Google bypassed the account picker.
+- Forced `GoogleSignInClient.signOut()` invocation during the logout process to clear the locally cached Google account session.
+
+### Changed
+- Updated `LoginViewModel` logout method signature to require `Context` for correct Google session clearing.
+
+## [1.8.1] - 2026-06-29
+### Added
+- **Local Notification History:** Refactored `NotificationsViewModel` to observe data directly from the Room database, ensuring instant UI updates.
+- **Custom Branding:** Configured custom app icon for push notifications via `AndroidManifest` metadata.
+
+### Changed
+- **Performance:** Decoupled notification history from Firestore, reducing network latency and dependency on internet connection for viewing history.
+
+## [1.8.0] - 2026-06-29
+### Added
+- **Notification History:** Integrated Room Database to store all incoming FCM push notifications locally.
+- **Persistence Layer:** Added `NotificationEntity` and `NotificationDao` to manage notification history.
+- **Background Sync:** Updated `PekFirebaseMessagingService` to perform silent database writes on the IO thread upon receiving new messages.
+
+## [1.7.3] - 2026-06-28
+### Added
+- **Accurate Watch Time Calculation:** Replaced hardcoded "45 minutes per episode" logic with dynamic calculation based on real `runtime` data fetched from the TVMaze API.
+- **Data Model Update:** Added `runtime` field to `Episode` and `TvMazeEpisodeDto` models.
+
+### Changed
+- **Profile Stats Engine:** Refactored `ProfileViewModel` to compute total viewing time using real-time episode metadata, providing accurate user statistics.
+- **Data Concurrency:** Optimized repository data fetching using `async/await` to process series data in parallel, improving overall UI responsiveness.
+
+## [1.7.2] - 2026-06-28
+### Added
+- **Smart Filter Panel:** Introduced a `ModalBottomSheet` on the Home screen to encapsulate Genre, Type, and Year filters, significantly improving the screen's real estate.
+- **Filter Indicators:** Added dynamic visual cues (a yellow dot and tinted `FilterList` icon) to inform the user when custom filters are actively applied.
+- Added a "Clear All" button inside the filter sheet for quick resets.
+
+### Changed
+- Refactored `HomeScreen` layout to prioritize content discovery and reduce top-bar clutter.
+
+## [1.7.1] - 2026-06-28
+### Added
+- **Watchlist Swiping:** Implemented `HorizontalPager` in `WatchlistScreen` allowing smooth swipe navigation between "Upcoming" and "Subscriptions" tabs.
+- **Smart Shimmer Effect:** Added a custom lightweight `Modifier.shimmerEffect()`. The shimmer is displayed only on the initial load to improve UX.
+- **Pull-to-Refresh:** Integrated Material 3 `PullToRefreshBox` allowing manual list updates without triggering the initial shimmer state.
+
+### Changed
+- **Network Optimization:** Refactored `WatchlistViewModel` to fetch upcoming episodes and user subscriptions concurrently using Kotlin Coroutines `async/await`, significantly reducing the total load time.
+
 ## [1.7.0] - 2026-06-24
 ### Added
 - **Cloud Push Notifications:** Implemented `PekFirebaseMessagingService` to receive real-time push notifications using Firebase Cloud Messaging (FCM).

@@ -1,13 +1,16 @@
 package az.pekstudios.pekseries.feature.auth
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import az.pekstudios.pekseries.core.network.repository.SeriesRepository
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import az.pekstudios.pekseries.core.network.repository.SeriesRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -58,8 +61,15 @@ class LoginViewModel @Inject constructor(
             }
     }
 
-    fun logout() {
+    // Добавили Context для очистки кэша Google
+    fun logout(context: Context) {
+        // 1. Выходим из Firebase
         auth.signOut()
-        _isUserLoggedIn.value = false
+
+        // 2. Выходим из Google Play Services, чтобы появилось окно выбора аккаунта
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build()
+        GoogleSignIn.getClient(context, gso).signOut().addOnCompleteListener {
+            _isUserLoggedIn.value = false
+        }
     }
 }

@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -46,8 +47,9 @@ fun PekSeriesApp(showIdFromPush: String? = null) {
         NavHost(navController = navController, startDestination = "main") {
 
             composable("main") {
+                val context = LocalContext.current
                 PekSeriesMainContent(
-                    onLogout = { loginViewModel.logout() },
+                    onLogout = { loginViewModel.logout(context) },
                     onNavigateToDetail = { showId -> navController.navigate("detail/$showId") },
                     onNavigateToNotifications = { navController.navigate("notifications") }
                 )

@@ -176,8 +176,18 @@ class SeriesRepository @Inject constructor(
 
     suspend fun getShowEpisodes(tvMazeId: String): List<Episode> {
         return try {
-            val episodes = tvMazeApi.getShowEpisodes(tvMazeId)
-            episodes.reversed()
+            val dtos = tvMazeApi.getShowEpisodes(tvMazeId)
+            dtos.map { dto ->
+                Episode(
+                    id = dto.id.toString(),
+                    name = dto.name,
+                    season = dto.season,
+                    number = dto.number,
+                    airdate = dto.airdate,
+                    airstamp = dto.airstamp,
+                    runtime = dto.runtime
+                )
+            }.reversed()
         } catch (e: Exception) { emptyList() }
     }
 
@@ -229,30 +239,35 @@ class SeriesRepository @Inject constructor(
             }
         } catch (e: Exception) { false }
     }
-
     suspend fun getSubscribedShows(): List<Show> {
         val userId = auth.currentUser?.uid ?: return emptyList()
         return try {
             val snapshot = db.collection("users").document(userId).collection("subscriptions").get().await()
-            snapshot.documents.mapNotNull { doc ->
-                val id = doc.id
-                try {
-                    val dto = tvMazeApi.getShowById(id)
-                    Show(
-                        id = "tvmaze_${dto.id}",
-                        title = dto.name,
-                        imageUrl = dto.image?.medium ?: "",
-                        episode = dto.premiered?.let { "Premiere: ${formatDateFull(it)}" } ?: "",
-                        time = dto.rating?.average?.let {
-                            String.format(
-                                Locale.US,
-                                "Rating: ★ %.1f",
-                                it
+
+            // 🚀 ПАРАЛЛЕЛЬНАЯ ЗАГРУЗКА
+            coroutineScope {
+                snapshot.documents.map { doc ->
+                    async {
+                        val id = doc.id
+                        try {
+                            val dto = tvMazeApi.getShowById(id)
+                            Show(
+                                id = "tvmaze_${dto.id}",
+                                title = dto.name,
+                                imageUrl = dto.image?.medium ?: "",
+                                episode = dto.premiered?.let { "Premiere: ${formatDateFull(it)}" } ?: "",
+                                time = dto.rating?.average?.let {
+                                    String.format(
+                                        Locale.US,
+                                        "Rating: ★ %.1f",
+                                        it
+                                    )
+                                } ?: "",
+                                isSubscribed = true
                             )
-                        } ?: "",
-                        isSubscribed = true
-                    )
-                } catch (e: Exception) { null }
+                        } catch (e: Exception) { null }
+                    }
+                }.awaitAll().filterNotNull() // Ждем все одновременно и убираем ошибки
             }
         } catch (e: Exception) { emptyList() }
     }
@@ -267,37 +282,111 @@ class SeriesRepository @Inject constructor(
             val snapshot = db.collection("users").document(userId).collection("subscriptions").get().await()
             val showIds = snapshot.documents.map { it.id }
 
-            val shows = showIds.mapNotNull { id ->
-                try {
-                    kotlinx.coroutines.delay(500)
+            // 🚀 УМНАЯ ПАРАЛЛЕЛЬНАЯ ЗАГРУЗКА БЕЗ DELAY(500)
+            val shows = coroutineScope {
+                // Разбиваем на пачки по 5 штук, чтобы не получить бан от TVMaze за спам
+                showIds.chunked(5).flatMap { chunk ->
+                    chunk.map { id ->
+                        async {
+                            try {
+                                val showDto = tvMazeApi.getShowById(id)
+                                val episodes = tvMazeApi.getShowEpisodes(id)
+                                val nextEpisode = episodes.firstOrNull { ep ->
+                                    ep.airstamp?.let { Instant.parse(it).isAfter(now) } ?: false
+                                }
 
-                    val showDto = tvMazeApi.getShowById(id)
-                    val episodes = tvMazeApi.getShowEpisodes(id)
-                    val nextEpisode = episodes.firstOrNull { ep ->
-                        ep.airstamp?.let { Instant.parse(it).isAfter(now) } ?: false
-                    }
+                                if (nextEpisode != null) {
+                                    val instant = Instant.parse(nextEpisode.airstamp)
+                                    val localTime = timeFormatter.format(instant)
+                                    val localDate = dateFormatter.format(instant)
 
-                    if (nextEpisode != null) {
-                        val instant = Instant.parse(nextEpisode.airstamp)
-                        val localTime = timeFormatter.format(instant)
-                        val localDate = dateFormatter.format(instant)
-
-                        Show(
-                            id = "tvmaze_$id",
-                            title = showDto.name,
-                            imageUrl = showDto.image?.medium ?: "",
-                            episode = "S${nextEpisode.season} E${nextEpisode.number} - ${nextEpisode.name}",
-                            time = localTime,
-                            dateDisplay = localDate,
-                            isSubscribed = true,
-                            airTimeMs = instant.toEpochMilli()
-                        )
-                    } else null
-                } catch (e: Exception) { null }
+                                    Show(
+                                        id = "tvmaze_$id",
+                                        title = showDto.name,
+                                        imageUrl = showDto.image?.medium ?: "",
+                                        episode = "S${nextEpisode.season} E${nextEpisode.number} - ${nextEpisode.name}",
+                                        time = localTime,
+                                        dateDisplay = localDate,
+                                        isSubscribed = true,
+                                        airTimeMs = instant.toEpochMilli()
+                                    )
+                                } else null
+                            } catch (e: Exception) { null }
+                        }
+                    }.awaitAll() // Ждем пачку из 5 штук и переходим к следующей
+                }
             }
-            shows.sortedBy { it.airTimeMs }
+            shows.filterNotNull().sortedBy { it.airTimeMs }
         } catch (e: Exception) { emptyList() }
     }
+//    suspend fun getSubscribedShows(): List<Show> {
+//        val userId = auth.currentUser?.uid ?: return emptyList()
+//        return try {
+//            val snapshot = db.collection("users").document(userId).collection("subscriptions").get().await()
+//            snapshot.documents.mapNotNull { doc ->
+//                val id = doc.id
+//                try {
+//                    val dto = tvMazeApi.getShowById(id)
+//                    Show(
+//                        id = "tvmaze_${dto.id}",
+//                        title = dto.name,
+//                        imageUrl = dto.image?.medium ?: "",
+//                        episode = dto.premiered?.let { "Premiere: ${formatDateFull(it)}" } ?: "",
+//                        time = dto.rating?.average?.let {
+//                            String.format(
+//                                Locale.US,
+//                                "Rating: ★ %.1f",
+//                                it
+//                            )
+//                        } ?: "",
+//                        isSubscribed = true
+//                    )
+//                } catch (e: Exception) { null }
+//            }
+//        } catch (e: Exception) { emptyList() }
+//    }
+//
+//    suspend fun getUpcomingSubscribedEpisodes(): List<Show> {
+//        val userId = auth.currentUser?.uid ?: return emptyList()
+//        val now = Instant.now()
+//        val timeFormatter = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault())
+//        val dateFormatter = DateTimeFormatter.ofPattern("dd-MM").withZone(ZoneId.systemDefault())
+//
+//        return try {
+//            val snapshot = db.collection("users").document(userId).collection("subscriptions").get().await()
+//            val showIds = snapshot.documents.map { it.id }
+//
+//            val shows = showIds.mapNotNull { id ->
+//                try {
+//                    kotlinx.coroutines.delay(500)
+//
+//                    val showDto = tvMazeApi.getShowById(id)
+//                    val episodes = tvMazeApi.getShowEpisodes(id)
+//                    val nextEpisode = episodes.firstOrNull { ep ->
+//                        ep.airstamp?.let { Instant.parse(it).isAfter(now) } ?: false
+//                    }
+//
+//                    if (nextEpisode != null) {
+//                        val instant = Instant.parse(nextEpisode.airstamp)
+//                        val localTime = timeFormatter.format(instant)
+//                        val localDate = dateFormatter.format(instant)
+//
+//                        Show(
+//                            id = "tvmaze_$id",
+//                            title = showDto.name,
+//                            imageUrl = showDto.image?.medium ?: "",
+//                            episode = "S${nextEpisode.season} E${nextEpisode.number} - ${nextEpisode.name}",
+//                            time = localTime,
+//                            dateDisplay = localDate,
+//                            isSubscribed = true,
+//                            airTimeMs = instant.toEpochMilli()
+//                        )
+//                    } else null
+//                } catch (e: Exception) { null }
+//            }
+//            shows.sortedBy { it.airTimeMs }
+//        } catch (e: Exception) { emptyList() }
+//    }
 
     data class EpisodeNotificationData(
         val episodeId: String,

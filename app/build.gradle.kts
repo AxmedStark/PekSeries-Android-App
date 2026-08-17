@@ -16,9 +16,9 @@ if (localPropertiesFile.exists()) {
 val tmdbApiKey = localProperties.getProperty("TMDB_API_KEY") ?: ""
 
 val versionMajor = 1
-val versionMinor = 7
-val versionPatch = 0
-val versionBuild = 49
+val versionMinor = 8
+val versionPatch = 3
+val versionBuild = 58
 
 val appVersionCode = versionMajor * 100_000_000 + versionMinor * 100_000 + versionPatch * 1_000 + versionBuild
 val appVersionName = "$versionMajor.$versionMinor.$versionPatch.$versionBuild"

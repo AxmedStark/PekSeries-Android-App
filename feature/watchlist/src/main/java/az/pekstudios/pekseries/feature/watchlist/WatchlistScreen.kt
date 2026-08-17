@@ -1,157 +1,151 @@
 package az.pekstudios.pekseries.feature.watchlist
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import az.pekstudios.pekseries.core.ui.theme.*
-import coil.compose.AsyncImage
-import androidx.compose.ui.layout.ContentScale
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import az.pekstudios.pekseries.core.model.Show
+import az.pekstudios.pekseries.core.ui.theme.*
+import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WatchListScreen(
     onNavigateToDetail: (String) -> Unit = {},
     viewModel: WatchlistViewModel = hiltViewModel()
 ) {
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Upcoming", "Subscriptions")
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val coroutineScope = rememberCoroutineScope()
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Watchlist", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(16.dp))
+    val isInitialLoading by viewModel.isInitialLoading.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val todayEpisodes by viewModel.todayEpisodes.collectAsState()
+    val subscriptions by viewModel.subscriptions.collectAsState()
 
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xFF121212))) {
         TabRow(
-            selectedTabIndex = selectedTabIndex,
-            containerColor = Color.Transparent,
-            contentColor = Primary,
+            selectedTabIndex = pagerState.currentPage,
+            containerColor = Color(0xFF121212),
+            contentColor = Color.White,
             indicator = { tabPositions ->
                 TabRowDefaults.SecondaryIndicator(
-                    Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                    modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
                     color = Primary
                 )
-            },
-            divider = { HorizontalDivider(color = Color.DarkGray) }
+            }
         ) {
             tabs.forEachIndexed { index, title ->
                 Tab(
-                    selected = selectedTabIndex == index,
-                    onClick = { selectedTabIndex = index },
-                    text = { Text(title, fontWeight = FontWeight.Bold) },
-                    selectedContentColor = Primary,
-                    unselectedContentColor = Color.Gray
+                    selected = pagerState.currentPage == index,
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(index)
+                        }
+                    },
+                    text = {
+                        Text(
+                            text = title,
+                            color = if (pagerState.currentPage == index) Primary else Color.Gray,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        when (selectedTabIndex) {
-            0 -> UpcomingContent(viewModel, onNavigateToDetail)
-            1 -> SubscriptionsContent(
-                viewModel = viewModel,
-                onNavigateToDetail = onNavigateToDetail
-            )
-        }
-    }
-}
-
-@Composable
-fun UpcomingContent(
-    viewModel: WatchlistViewModel,
-    onNavigateToDetail: (String) -> Unit
-) {
-    val todayEpisodes by viewModel.todayEpisodes.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-
-    LaunchedEffect(Unit) {
-        viewModel.loadTodayEpisodes()
-    }
-
-    if (isLoading && todayEpisodes.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = Primary)
-        }
-    } else if (todayEpisodes.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No upcoming episodes for your subscriptions", color = Color.Gray)
-        }
-    } else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.loadData(isRefresh = true) },
+            modifier = Modifier.fillMaxSize()
         ) {
-            item {
-                Text(
-                    text = "Upcoming Releases",
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
-
-            items(todayEpisodes) { show ->
-                UpcomingEpisodeCard(show = show, onClick = { onNavigateToDetail(show.id) })
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                if (isInitialLoading) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(6) { ShimmerWatchlistItem() }
+                    }
+                } else {
+                    when (page) {
+                        0 -> {
+                            if (todayEpisodes.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text("No upcoming episodes", color = Color.Gray)
+                                }
+                            } else {
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(16.dp)
+                                ) {
+                                    items(todayEpisodes) { show ->
+                                        WatchlistCard(show = show, onClick = { onNavigateToDetail(show.id) })
+                                    }
+                                }
+                            }
+                        }
+                        1 -> {
+                            if (subscriptions.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text("No subscriptions yet", color = Color.Gray)
+                                }
+                            } else {
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(16.dp)
+                                ) {
+                                    items(subscriptions) { show ->
+                                        SubscriptionCard(show = show, onClick = { onNavigateToDetail(show.id) })
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun SubscriptionsContent(
-    viewModel: WatchlistViewModel,
-    onNavigateToDetail: (String) -> Unit
-) {
-    val subscriptions by viewModel.subscriptions.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-
-    LaunchedEffect(Unit) {
-        viewModel.loadSubscriptions()
-    }
-
-    if (isLoading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = Primary)
-        }
-    } else if (subscriptions.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No subscriptions found", color = Color.Gray)
-        }
-    } else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
-        ) {
-            items(subscriptions) { show ->
-                SubscriptionCard(show = show, onClick = { onNavigateToDetail(show.id) })
-            }
-        }
-    }
-}
-
-@Composable
-fun UpcomingEpisodeCard(show: Show, onClick: () -> Unit) {
+fun WatchlistCard(show: Show, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp)
-            .clickable { onClick() },
+            .padding(vertical = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(CardBg)
+            .clickable { onClick() }
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(
@@ -167,34 +161,23 @@ fun UpcomingEpisodeCard(show: Show, onClick: () -> Unit) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = show.time ?: "",
-                color = Color.Gray,
+                color = TextPrimary,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
             )
         }
-
-        Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
-            Text(
-                text = show.title,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = show.episode ?: "",
-                color = Color.Gray,
-                fontSize = 13.sp,
-                lineHeight = 18.sp
-            )
+        Column(
+            modifier = Modifier.weight(1f)) {
+            Text(show.title, color = PekYellow, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(show.episode ?: "", color = TextPrimary, fontSize = 14.sp)
         }
-
         AsyncImage(
-            model = show.imageUrl,
+            model = show.getPosterUrl(),
             contentDescription = null,
             modifier = Modifier
                 .size(width = 55.dp, height = 80.dp)
-                .clip(RoundedCornerShape(8.dp)),
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.DarkGray),
             contentScale = ContentScale.Crop
         )
     }
@@ -229,7 +212,58 @@ fun SubscriptionCard(show: Show, onClick: () -> Unit) {
             imageVector = Icons.Default.CheckCircle,
             contentDescription = null,
             tint = Color(0xFF03DAC5),
-            modifier = Modifier.size(24.dp).padding(end = 4.dp)
+            modifier = Modifier.size(24.dp)
         )
     }
+}
+
+@Composable
+fun ShimmerWatchlistItem() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(CardBg)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(60.dp, 80.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .shimmerEffect()
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Box(modifier = Modifier.fillMaxWidth(0.7f).height(16.dp).clip(RoundedCornerShape(4.dp)).shimmerEffect())
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(modifier = Modifier.fillMaxWidth(0.5f).height(12.dp).clip(RoundedCornerShape(4.dp)).shimmerEffect())
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(modifier = Modifier.fillMaxWidth(0.4f).height(12.dp).clip(RoundedCornerShape(4.dp)).shimmerEffect())
+        }
+    }
+}
+
+fun Modifier.shimmerEffect(): Modifier = composed {
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer"
+    )
+    background(
+        brush = Brush.linearGradient(
+            colors = listOf(
+                Color.Gray.copy(alpha = 0.3f),
+                Color.LightGray.copy(alpha = 0.1f),
+                Color.Gray.copy(alpha = 0.3f)
+            ),
+            start = Offset(10f, 10f),
+            end = Offset(translateAnim, translateAnim)
+        )
+    )
 }

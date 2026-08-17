@@ -55,5 +55,6 @@ dependencies {
 
     // Tools
     implementation(libs.timber)
+    implementation(libs.okhttp.logging.interceptor)
     debugImplementation(libs.library) // Chucker
 }
