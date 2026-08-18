@@ -1,9 +1,9 @@
-package az.pekstudios.pekseries.feature.notifications.di
+package az.pekstudios.pekseries.core.database.di
 
 import android.content.Context
 import androidx.room.Room
-import az.pekstudios.pekseries.feature.notifications.data.AppDatabase
-import az.pekstudios.pekseries.feature.notifications.data.NotificationDao
+import az.pekstudios.pekseries.core.database.PekDatabase
+import az.pekstudios.pekseries.core.database.NotificationDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,16 +17,16 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
+    fun providePekDatabase(@ApplicationContext context: Context): PekDatabase {
         return Room.databaseBuilder(
             context,
-            AppDatabase::class.java,
+            PekDatabase::class.java,
             "pekseries_db"
         ).build()
     }
 
     @Provides
-    fun provideNotificationDao(database: AppDatabase): NotificationDao {
+    fun provideNotificationDao(database: PekDatabase): NotificationDao {
         return database.notificationDao()
     }
 }

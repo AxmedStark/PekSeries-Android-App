@@ -5,8 +5,8 @@ import android.app.NotificationManager
 import android.content.Context
 import androidx.core.app.NotificationCompat
 import az.pekstudios.pekseries.core.ui.R
-import az.pekstudios.pekseries.feature.notifications.data.NotificationDao
-import az.pekstudios.pekseries.feature.notifications.data.NotificationEntity
+import az.pekstudios.pekseries.core.database.NotificationDao
+import az.pekstudios.pekseries.core.database.NotificationEntity
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint

@@ -1,4 +1,4 @@
-package az.pekstudios.pekseries.feature.notifications.data
+package az.pekstudios.pekseries.core.database
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

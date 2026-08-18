@@ -1,136 +1,49 @@
-import java.util.Properties
-
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.hilt)
-    alias(libs.plugins.ksp)
+    alias(libs.plugins.pekseries.android.application)
+    alias(libs.plugins.pekseries.android.application.compose)
+    alias(libs.plugins.pekseries.android.hilt)
+    alias(libs.plugins.pekseries.android.firebase)
     alias(libs.plugins.google.services)
 }
 
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localProperties.load(localPropertiesFile.inputStream())
-}
-val tmdbApiKey = localProperties.getProperty("TMDB_API_KEY") ?: ""
-
-val versionMajor = 1
-val versionMinor = 8
-val versionPatch = 3
-val versionBuild = 58
-
-val appVersionCode = versionMajor * 100_000_000 + versionMinor * 100_000 + versionPatch * 1_000 + versionBuild
-val appVersionName = "$versionMajor.$versionMinor.$versionPatch.$versionBuild"
-
 android {
     namespace = "az.pekstudios.pekseries"
-    compileSdk = 36
-
-    defaultConfig {
-        applicationId = "az.pekstudios.pekseries"
-        minSdk = 26
-        //noinspection OldTargetApi
-        targetSdk = 36
-        versionCode = appVersionCode
-        versionName = appVersionName
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "TMDB_API_KEY", "\"$tmdbApiKey\"")
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-//            signingConfig = signingConfigs.getByName("debug")
-            buildConfigField("String", "BASE_URL", "\"https://api.tvmaze.com\"")
-        }
-        debug {
-            isMinifyEnabled = false
-            buildConfigField("String", "BASE_URL", "\"https://api.tvmaze.com\"")
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    buildFeatures {
-        buildConfig = true
-        viewBinding = true
-        compose = true
-    }
-}
-
-kotlin {
-    jvmToolchain(17)
 }
 
 dependencies {
-    // core
-    implementation(project(":core:network"))
-    implementation(project(":core:model"))
-    implementation(project(":core:ui"))
-    implementation(project(":core:work"))
+    implementation(projects.core.database)
+    implementation(projects.core.datastore)
+    implementation(projects.core.model)
+    implementation(projects.core.network)
+    implementation(projects.core.ui)
+    implementation(projects.core.work)
 
-    // feature
-    implementation(project(":feature:auth"))
-    implementation(project(":feature:detail"))
-    implementation(project(":feature:home"))
-    implementation(project(":feature:notifications"))
-    implementation(project(":feature:profile"))
-    implementation(project(":feature:search"))
-    implementation(project(":feature:watchlist"))
+    implementation(projects.feature.auth)
+    implementation(projects.feature.detail)
+    implementation(projects.feature.home)
+    implementation(projects.feature.notifications)
+    implementation(projects.feature.profile)
+    implementation(projects.feature.search)
+    implementation(projects.feature.watchlist)
 
-    // Core and Compose
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.graphics)
-    implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
     implementation(libs.androidx.compose.material.icons.extended)
-    implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
-    // Firebase
-    implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.auth)
-    implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
-    implementation(libs.play.services.auth)
 
-    // Media
-    implementation(libs.androidx.media3.exoplayer)
-    implementation(libs.media3.ui)
-    implementation(libs.androidx.media3.common)
-    implementation(libs.coil.compose)
-
-    // Debugging
     implementation(libs.timber)
-    debugImplementation(libs.library)
-    releaseImplementation(libs.library.no.op)
 
-    // Hilt DI - KSP
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.android.compiler)
-
-    // Hilt for Jetpack Compose and ViewModel
-    implementation(libs.androidx.hilt.navigation.compose)
-
-    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

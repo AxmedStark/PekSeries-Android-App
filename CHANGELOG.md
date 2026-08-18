@@ -5,6 +5,25 @@ All notable changes to the PekSeries project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-08-18
+### Added
+- **Convention Plugins:** Introduced a `build-logic` included build exposing `pekseries.android.{application,library,library.compose,feature,hilt,room,firebase}`. Module build files dropped from ~35 lines of duplicated `android {}` config to under 15 lines of real dependencies.
+- **Build Flavors:** Added a `dev`/`prod` flavor dimension. `dev` carries a `-DEV` versionName suffix and an `ENVIRONMENT` BuildConfig field; an opt-in `pekseries.devSeparateApplicationId` property enables side-by-side installs once a `.debug` client is registered in Firebase.
+- **Externalised Versioning:** Moved versionCode/versionName into a committed `version.properties`, so CI can cut a release by editing one line instead of rewriting Kotlin.
+- **Secret Management:** Replaced `local.properties` with `secrets.properties` (gitignored) plus a committed `secrets.properties.example`. Every key resolves from the environment first, so CI never writes a credential to disk.
+- **Release Signing:** Added an environment-driven signing config. When credentials are absent the config is skipped, so release builds still assemble unsigned for local verification rather than failing.
+- **R8 Configuration:** Wrote real ProGuard rules, with module-owned `consumer-rules.pro` in `:core:model`, `:core:network` and `:feature:notifications` so keep rules travel with the code they protect.
+
+### Fixed
+- **Release Build Never Compiled:** `NetworkModule` imports `ChuckerInterceptor` unconditionally, but `:core:network` declared Chucker as `debugImplementation` only. Added the matching `releaseImplementation(chucker-release)` no-op artifact. Prior to this, every release variant failed at `compileReleaseKotlin`.
+- **R8 Would Have Silently Broken All API Parsing:** Minification was enabled against an empty rules file. Every DTO matches JSON by field name with no `@SerializedName`, so R8 renaming would have yielded objects full of nulls — visible only in release. Verified against `mapping.txt`: 2320 DTO members retained their names, zero Gson-facing members renamed.
+
+### Changed
+- **Build Performance:** Enabled the Gradle configuration cache and dropped the deprecated `configureondemand`. Incremental `assembleProdRelease` went from 1m47s to 1s on a warm cache.
+- **Dependency Hygiene:** Removed unused Media3/ExoPlayer, AppCompat, Material and WorkManager entries from the version catalog. Renamed the opaque `library`/`library-no-op` Chucker aliases to `chucker-debug`/`chucker-release`.
+- **Type-safe Project Accessors:** Modules are now referenced as `projects.core.model` rather than `project(":core:model")`.
+- **Scoped .gitignore:** Replaced a blanket `*.json` rule, which would have swallowed Room schemas and CI configs, with targeted `google-services.json` entries.
+
 ## [1.8.3] - 2026-06-29
 ### Added
 - **Optimized Network Layer:** Reimplemented `SeriesRepository` methods using `coroutineScope` and `async/await` to perform parallel API requests.

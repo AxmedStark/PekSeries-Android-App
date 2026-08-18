@@ -2,8 +2,8 @@ package az.pekstudios.pekseries.feature.notifications
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import az.pekstudios.pekseries.feature.notifications.data.NotificationDao
-import az.pekstudios.pekseries.feature.notifications.data.NotificationEntity
+import az.pekstudios.pekseries.core.database.NotificationDao
+import az.pekstudios.pekseries.core.database.NotificationEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

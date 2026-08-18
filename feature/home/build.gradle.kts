@@ -1,42 +1,18 @@
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.hilt)
-    alias(libs.plugins.ksp)
+    alias(libs.plugins.pekseries.android.feature)
+    alias(libs.plugins.pekseries.android.firebase)
 }
 
 android {
     namespace = "az.pekstudios.pekseries.feature.home"
-    compileSdk = 36
-
-    defaultConfig { minSdk = 26 }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    buildFeatures { compose = true }
 }
 
-kotlin { jvmToolchain(17) }
-
 dependencies {
-    implementation(project(":core:network"))
-    implementation(project(":core:model"))
-    implementation(project(":core:ui"))
+    implementation(projects.core.network)
 
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.material.icons.extended)
-
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    implementation(libs.androidx.hilt.navigation.compose)
-
-    implementation(libs.kotlinx.coroutines.android)
     implementation(libs.coil.compose)
 
-    implementation(platform(libs.firebase.bom))
+    // TODO(P1): HomeScreen reads FirebaseAuth straight from the Composable.
+    //  That belongs behind a repository so the screen can be previewed and tested.
     implementation(libs.firebase.auth)
 }
