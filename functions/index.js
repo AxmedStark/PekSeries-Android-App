@@ -3,9 +3,14 @@ const admin = require("firebase-admin");
 
 admin.initializeApp();
 
-exports.checkNewEpisodes = onSchedule("every 60 minutes", async (event) => {
-    const now = new Date()
-    const oneHourAgo = new Date(now.getTime() - 65 * 60 * 1000);
+const SCHEDULE_MINUTES = 60;
+
+exports.checkNewEpisodes = onSchedule(`every ${SCHEDULE_MINUTES} minutes`, async (event) => {
+    const now = new Date();
+    // Must match the schedule exactly. A 65-minute lookback on a 60-minute
+    // schedule overlaps by 5 minutes, so anything airing in that window was
+    // notified twice.
+    const windowStart = new Date(now.getTime() - SCHEDULE_MINUTES * 60 * 1000);
 
     try {
         console.log("Request TVMaze schedule...");
@@ -26,7 +31,7 @@ exports.checkNewEpisodes = onSchedule("every 60 minutes", async (event) => {
 
             const airTime = new Date(ep.airstamp);
 
-            if (airTime >= oneHourAgo && airTime <= now) {
+            if (airTime >= windowStart && airTime <= now) {
                 const showId = ep.show.id;
                 const showName = ep.show.name;
                 const epString = `S${ep.season} E${ep.number} - ${ep.name}`;
@@ -41,6 +46,12 @@ exports.checkNewEpisodes = onSchedule("every 60 minutes", async (event) => {
                         title: `New episode: ${showName}`,
                         body: `${epString} at ${formattedTime}`,
                         showId: String(showId)
+                    },
+                    // Data-only messages are normal priority by default, which
+                    // Doze defers - sometimes for hours. The app builds the
+                    // notification itself, so delivery must be prompt.
+                    android: {
+                        priority: "high"
                     }
                 };
 
@@ -49,7 +60,7 @@ exports.checkNewEpisodes = onSchedule("every 60 minutes", async (event) => {
             }
         }
 
-        console.log("Check success. Series: ${notificationsSent}");
+        console.log(`Check complete. Notifications sent: ${notificationsSent}`);
     } catch (error) {
         console.error("Check error:", error);
     }

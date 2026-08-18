@@ -5,6 +5,27 @@ All notable changes to the PekSeries project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.1] - 2026-08-18
+### Fixed
+- **Push Notifications Did Nothing When Tapped:** `showNotification()` built a notification with no `setContentIntent`, so there was no `PendingIntent` anywhere in the app. Because the Cloud Function sends *data-only* messages, FCM never auto-displayed a notification either, meaning the `showId` extra `MainActivity` read was never populated by anyone. Deep linking was non-functional in every case, not merely on the foreground path.
+- **Warm-Start Taps Were Ignored:** `MainActivity` only read the intent in `onCreate`. Added `launchMode="singleTop"` plus an `onNewIntent` override, so tapping a push while the app is already running now navigates.
+- **Notifications Could Be Delayed For Hours:** the Cloud Function sent data-only messages at default priority, which Doze defers. Added `android: { priority: "high" }`.
+- **Duplicate Push Notifications:** the function ran every 60 minutes but looked back 65, so anything airing in the 5-minute overlap was notified twice. The lookback now matches the schedule.
+- **Push Toggle Did Nothing:** the profile switch wrote a `SharedPreferences` boolean that nothing ever read. Since delivery is driven by FCM topics, it now subscribes/unsubscribes every topic, persists only after the topic change succeeds, and is disabled while in flight.
+- **Notifications Stacked Unboundedly:** each push used `Random.nextInt()` as its id. Now keyed on the show, so a newer episode replaces the previous entry.
+- **Wrong Notification Icon:** used `ic_launcher_foreground`, which renders as a white blob in the status bar. Switched to the existing `ic_notification`.
+- **Unscoped Database Write:** the FCM service wrote history from a bare `CoroutineScope(Dispatchers.IO)` that could be killed mid-insert when the process was torn down.
+- **Stale Login State:** `LoginViewModel` read `auth.currentUser` once at construction, so the flag could drift after a token expiry. Now backed by an `AuthStateListener`.
+- **Cloud Function Log Bug:** a template literal in double quotes never interpolated, logging a literal `${notificationsSent}`.
+
+### Added
+- **Profile Editing:** display name and photo can be changed and are stored in DataStore, overriding the Google/email values and surviving re-login. Clearing an override restores the provider's value. Name changes are mirrored to Firebase on a best-effort basis.
+- **Email Auth Hardening:** new `AuthRepository` in the domain layer. Adds client-side email/password validation, a loading state, disabled controls while submitting, password reset, and email verification on signup. Firebase auth exceptions map to typed `DataError.Auth` cases, so users see "That email or password is not right" instead of a raw exception string.
+- **Deep-Link Contract:** `pekseries://show/{showId}`, declared in the manifest and built by `:core:work` as an implicit intent, avoiding a `core -> app` dependency. Links tapped while signed out are held and honoured after login.
+
+### Removed
+- All 24 `ExampleUnitTest`/`ExampleInstrumentedTest` stub files. They asserted `2 + 2 == 4`, and were additionally triggering an internal lint FIR crash during parallel analysis.
+
 ## [1.10.0] - 2026-08-18
 ### Added
 - **Domain Layer:** New `:core:domain` module holding `PekResult`, a typed `DataError`, the repository interfaces and `GetWatchStatsUseCase`. Feature modules now depend on `:core:domain` instead of `:core:network`, so a screen can be built against an interface rather than a concrete Retrofit/Firestore class.

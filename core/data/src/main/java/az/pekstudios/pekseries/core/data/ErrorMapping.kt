@@ -2,6 +2,13 @@ package az.pekstudios.pekseries.core.data
 
 import az.pekstudios.pekseries.core.domain.DataError
 import az.pekstudios.pekseries.core.domain.PekResult
+import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.FirebaseTooManyRequestsException
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.firestore.FirebaseFirestoreException
 import retrofit2.HttpException
 import timber.log.Timber
@@ -18,6 +25,23 @@ fun Throwable.toDataError(): DataError = when (this) {
         in 500..599 -> DataError.Server
         else -> DataError.Unknown(this)
     }
+
+    is FirebaseAuthWeakPasswordException -> DataError.Auth.WeakPassword
+    is FirebaseAuthUserCollisionException -> DataError.Auth.EmailAlreadyInUse
+    is FirebaseAuthRecentLoginRequiredException -> DataError.Auth.RequiresRecentLogin
+
+    // Firebase reports both a malformed address and a wrong password through
+    // this one type; the errorCode is the only way to tell them apart.
+    is FirebaseAuthInvalidCredentialsException ->
+        if (errorCode == "ERROR_INVALID_EMAIL") DataError.Auth.InvalidEmail
+        else DataError.Auth.InvalidCredentials
+
+    is FirebaseAuthInvalidUserException ->
+        if (errorCode == "ERROR_USER_DISABLED") DataError.Auth.UserDisabled
+        else DataError.Auth.InvalidCredentials
+
+    is FirebaseTooManyRequestsException -> DataError.Auth.TooManyAttempts
+    is FirebaseNetworkException -> DataError.Network
 
     is NotSignedInException -> DataError.Unauthenticated
 

@@ -7,6 +7,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -19,12 +20,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import az.pekstudios.pekseries.core.ui.component.toUserMessage
 import az.pekstudios.pekseries.core.ui.theme.DarkBg
 import az.pekstudios.pekseries.core.ui.theme.PekYellow
 import az.pekstudios.pekseries.core.ui.theme.Primary
@@ -33,13 +36,10 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 
 @Composable
-fun LoginScreen(loginViewModel: LoginViewModel = viewModel()) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var isRegisterMode by remember { mutableStateOf(false) }
+fun LoginScreen(loginViewModel: LoginViewModel = hiltViewModel()) {
+    val uiState by loginViewModel.uiState.collectAsState()
+    val isRegisterMode = uiState.mode == AuthMode.Register
     var passwordVisible by remember { mutableStateOf(false) }
-
-    val error by loginViewModel.error.collectAsState()
     val context = LocalContext.current
 
     val token = stringResource(R.string.default_web_client_id)
@@ -65,7 +65,11 @@ fun LoginScreen(loginViewModel: LoginViewModel = viewModel()) {
                 loginViewModel.signInWithGoogle(idToken)
             }
         } catch (e: ApiException) {
-            Toast.makeText(context, "Ошибка Google: ${e.statusCode}", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                context,
+                context.getString(R.string.google_sign_in_failed, e.statusCode),
+                Toast.LENGTH_LONG,
+            ).show()
         }
     }
 
@@ -97,10 +101,13 @@ fun LoginScreen(loginViewModel: LoginViewModel = viewModel()) {
             Spacer(modifier = Modifier.height(32.dp))
 
             OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
+                value = uiState.email,
+                onValueChange = loginViewModel::onEmailChange,
                 label = { Text("Email") },
                 singleLine = true,
+                enabled = !uiState.isSubmitting,
+                isError = uiState.emailError != null,
+                supportingText = uiState.emailError?.let { { Text(it, color = PekYellow) } },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 colors = TextFieldDefaults.colors(
                     focusedTextColor = Color.White,
@@ -119,12 +126,19 @@ fun LoginScreen(loginViewModel: LoginViewModel = viewModel()) {
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
+                value = uiState.password,
+                onValueChange = loginViewModel::onPasswordChange,
                 label = { Text("Password") },
                 singleLine = true,
+                enabled = !uiState.isSubmitting,
+                isError = uiState.passwordError != null,
+                supportingText = uiState.passwordError?.let { { Text(it, color = PekYellow) } },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(onDone = { loginViewModel.submit() }),
                 trailingIcon = {
                     val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -145,37 +159,52 @@ fun LoginScreen(loginViewModel: LoginViewModel = viewModel()) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            if (error != null) {
+            if (!isRegisterMode) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(
+                        onClick = loginViewModel::sendPasswordReset,
+                        enabled = !uiState.isSubmitting,
+                    ) {
+                        Text("Forgot password?", color = Color.Gray, fontSize = 12.sp)
+                    }
+                }
+            }
+
+            uiState.error?.let { dataError ->
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = error ?: "",
-                    color = PekYellow,
-                    fontSize = 14.sp
-                )
+                Text(text = dataError.toUserMessage(), color = PekYellow, fontSize = 14.sp)
+            }
+
+            uiState.message?.let { info ->
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(text = info, color = Primary, fontSize = 14.sp)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = {
-                    if (isRegisterMode) {
-                        loginViewModel.register(email, password)
-                    } else {
-                        loginViewModel.login(email, password)
-                    }
-                },
+                onClick = loginViewModel::submit,
+                enabled = uiState.canSubmit,
                 colors = ButtonDefaults.buttonColors(containerColor = Primary),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text(
-                    text = if (isRegisterMode) "Sign Up" else "Log In",
-                    color = Color.Black,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
+                if (uiState.isSubmitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.height(20.dp),
+                        color = Color.Black,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Text(
+                        text = if (isRegisterMode) "Sign Up" else "Log In",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -193,9 +222,8 @@ fun LoginScreen(loginViewModel: LoginViewModel = viewModel()) {
             Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedButton(
-                onClick = {
-                    googleSignInLauncher.launch(googleSignInClient.signInIntent)
-                },
+                onClick = { googleSignInLauncher.launch(googleSignInClient.signInIntent) },
+                enabled = !uiState.isSubmitting,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -211,7 +239,7 @@ fun LoginScreen(loginViewModel: LoginViewModel = viewModel()) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextButton(onClick = { isRegisterMode = !isRegisterMode }) {
+            TextButton(onClick = loginViewModel::toggleMode, enabled = !uiState.isSubmitting) {
                 Text(
                     text = if (isRegisterMode) "Already have an account? Log In" else "New here? Create Account",
                     color = Color.Gray

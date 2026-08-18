@@ -16,7 +16,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import kotlinx.coroutines.flow.StateFlow
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -31,16 +32,25 @@ import az.pekstudios.pekseries.feature.notifications.NotificationsScreen
 import az.pekstudios.pekseries.feature.home.HomeScreen
 
 @Composable
-fun PekSeriesApp(showIdFromPush: String? = null) {
-    val loginViewModel: LoginViewModel = viewModel()
+fun PekSeriesApp(
+    pendingShowId: StateFlow<String?>,
+    onShowIdHandled: () -> Unit,
+) {
+    val loginViewModel: LoginViewModel = hiltViewModel()
     val isLoggedIn by loginViewModel.isUserLoggedIn.collectAsState()
+    val showId by pendingShowId.collectAsState()
 
     if (isLoggedIn) {
         val navController = rememberNavController()
 
-        LaunchedEffect(showIdFromPush) {
-            if (!showIdFromPush.isNullOrEmpty()) {
-                navController.navigate("detail/$showIdFromPush")
+        // Held rather than dropped while signed out: a push tapped on the login
+        // screen still lands on the right show once the user gets in.
+        LaunchedEffect(showId) {
+            showId?.takeIf { it.isNotBlank() }?.let { id ->
+                navController.navigate("detail/$id") {
+                    launchSingleTop = true
+                }
+                onShowIdHandled()
             }
         }
 

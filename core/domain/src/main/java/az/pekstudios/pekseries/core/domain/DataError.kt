@@ -26,4 +26,28 @@ sealed interface DataError {
     data object Server : DataError
 
     data class Unknown(val cause: Throwable? = null) : DataError
+
+    /**
+     * Sign-in specific failures. Kept in the same hierarchy rather than a
+     * parallel AuthError type so there is one error vocabulary and one place
+     * that turns an error into user-facing copy.
+     */
+    sealed interface Auth : DataError {
+
+        /** Wrong password, or an account that does not exist. */
+        data object InvalidCredentials : Auth
+
+        data object InvalidEmail : Auth
+
+        data object EmailAlreadyInUse : Auth
+
+        data object WeakPassword : Auth
+
+        data object UserDisabled : Auth
+
+        /** Firebase asks for a recent login before this operation. */
+        data object RequiresRecentLogin : Auth
+
+        data object TooManyAttempts : Auth
+    }
 }
