@@ -25,6 +25,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
+import az.pekstudios.pekseries.core.ui.component.PekEmptyView
+import az.pekstudios.pekseries.core.ui.component.PekErrorView
+import az.pekstudios.pekseries.core.ui.component.PekLoadingView
 import az.pekstudios.pekseries.core.ui.theme.CardBg
 import az.pekstudios.pekseries.core.ui.theme.PekYellow
 import az.pekstudios.pekseries.core.ui.theme.Primary
@@ -40,8 +43,7 @@ fun SearchScreen(
     onNavigateToDetail: (String) -> Unit = {}
 ) {
     val query by searchViewModel.searchQuery.collectAsState()
-    val results by searchViewModel.searchResults.collectAsState()
-    val isLoading by searchViewModel.isLoading.collectAsState()
+    val uiState by searchViewModel.uiState.collectAsState()
 
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -80,17 +82,20 @@ fun SearchScreen(
             )
         )
 
-        if (isLoading) {
-            Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Primary)
-            }
-        }
+        when (val state = uiState) {
+            SearchUiState.Idle -> PekEmptyView("Type at least 3 characters to search.")
+            SearchUiState.Loading -> PekLoadingView()
+            is SearchUiState.Empty -> PekEmptyView("No shows match \"${state.query}\".")
+            is SearchUiState.Error -> PekErrorView(
+                error = state.error,
+                onRetry = { searchViewModel.onQueryChange(query) },
+            )
 
-        LazyColumn(
+            is SearchUiState.Success -> LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp)
         ) {
-            items(results) { show ->
+            items(state.shows) { show ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -131,4 +136,5 @@ fun SearchScreen(
             }
         }
     }
+        }
 }

@@ -3,7 +3,7 @@ package az.pekstudios.pekseries.feature.auth
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import az.pekstudios.pekseries.core.network.repository.SeriesRepository
+import az.pekstudios.pekseries.core.domain.repository.SubscriptionRepository
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
@@ -16,7 +16,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val repository: SeriesRepository
+    private val subscriptionRepository: SubscriptionRepository
 ) : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
 
@@ -32,7 +32,7 @@ class LoginViewModel @Inject constructor(
             .addOnSuccessListener {
                 _isUserLoggedIn.value = true
                 _error.value = null
-                viewModelScope.launch { repository.syncSubscriptionsWithFcm() }
+                viewModelScope.launch { subscriptionRepository.syncTopicsWithFcm() }
             }
             .addOnFailureListener { e ->
                 _error.value = "Google Auth Error: ${e.localizedMessage}"

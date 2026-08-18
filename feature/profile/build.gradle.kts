@@ -8,7 +8,7 @@ android {
 }
 
 dependencies {
-    implementation(projects.core.network)
+    implementation(projects.core.domain)
 
     implementation(libs.coil.compose)
     implementation(libs.firebase.auth)

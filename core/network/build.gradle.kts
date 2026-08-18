@@ -3,7 +3,6 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.pekseries.android.library)
     alias(libs.plugins.pekseries.android.hilt)
-    alias(libs.plugins.pekseries.android.firebase)
 }
 
 // Environment first so CI never has to write a file to disk; secrets.properties
@@ -28,22 +27,15 @@ android {
 }
 
 dependencies {
-    implementation(projects.core.model)
+    api(projects.core.model)
 
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging.interceptor)
-
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.firestore)
-    implementation(libs.firebase.messaging)
-    implementation(libs.kotlinx.coroutines.play.services)
-
     implementation(libs.timber)
 
     // Chucker is referenced unconditionally from NetworkModule, so the release
     // variant needs the no-op artifact that keeps the same API surface.
-    // Without it, release simply does not compile.
     debugImplementation(libs.chucker.debug)
     releaseImplementation(libs.chucker.release)
 

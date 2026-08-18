@@ -5,6 +5,26 @@ All notable changes to the PekSeries project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-08-18
+### Added
+- **Domain Layer:** New `:core:domain` module holding `PekResult`, a typed `DataError`, the repository interfaces and `GetWatchStatsUseCase`. Feature modules now depend on `:core:domain` instead of `:core:network`, so a screen can be built against an interface rather than a concrete Retrofit/Firestore class.
+- **Data Layer:** New `:core:data` module implementing those interfaces. `:core:network` is now purely Retrofit APIs and DTOs, with base URLs moved into `BuildConfig`.
+- **Typed Error Handling:** Repositories return `PekResult` instead of swallowing exceptions. `DataError` distinguishes Network, RateLimited, NotFound, Unauthenticated and Server, so the UI can finally tell "nothing found" apart from "the request failed".
+- **Shared State Components:** `PekLoadingView`, `PekErrorView` and `PekEmptyView` in `:core:ui`, with one `DataError.toUserMessage()` mapping so every screen words the same failure identically.
+- **Firebase via Hilt:** `FirebaseModule` provides Auth, Firestore and Messaging, replacing `getInstance()` calls in repository field initialisers that made unit testing impossible.
+
+### Fixed
+- **Home Screen Rendered Nothing On Failure:** `HomeScreen`'s `when` ended in `else -> Unit`, so Loading, Empty and Error all drew a blank screen. The branch is now exhaustive with a retry action.
+- **Watchlist Swallowed Every Error:** `loadData` caught exceptions into an empty block, silently leaving stale lists on screen. Failures are now surfaced with a retry.
+- **Search Race Condition:** Replaced the manual `searchJob?.cancel()` + `delay(500)` with `debounce` + `flatMapLatest`, so a slow response for an earlier query can no longer land after a newer one and overwrite its results.
+- **Coroutine Cancellation:** The old repository caught bare `Exception`, which swallowed `CancellationException` and broke structured concurrency. `runCatchingData` rethrows it.
+- **Inconsistent Watch Stats:** Profile and Watchlist each computed hours differently — one summed real episode `runtime`, the other multiplied by a hardcoded 45 minutes — so the same user saw two different figures. Both now use `GetWatchStatsUseCase`.
+
+### Removed
+- **Dead Watched-Episodes Feature:** `markEpisodeAsWatched` had no callers, so nothing ever wrote to `watched_episodes`, yet `getWatchedEpisodeIdsFromFirebase()` was called *inside* the per-show loop — 15 identical Firestore queries per home screen load, all to compute an `isWatched` flag that was always false.
+- **Superseded Firestore Notification Methods:** `saveNotification`, `getNotifications`, `clearNotifications` and the `PekNotification`/`EpisodeNotificationData` types, all unused since notification history moved to Room in 1.8.0.
+- Deleted the 452-line `SeriesRepository` god object, including ~70 lines of commented-out dead code.
+
 ## [1.9.0] - 2026-08-18
 ### Added
 - **Convention Plugins:** Introduced a `build-logic` included build exposing `pekseries.android.{application,library,library.compose,feature,hilt,room,firebase}`. Module build files dropped from ~35 lines of duplicated `android {}` config to under 15 lines of real dependencies.

@@ -37,10 +37,11 @@ fun DetailScreen(
     onBackClick: () -> Unit,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
-    val episodes by viewModel.episodes.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val isSubscribed by viewModel.isSubscribed.collectAsState()
-    val showDetails by viewModel.showDetails.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val episodes = uiState.episodes
+    val isLoading = uiState.isLoading
+    val isSubscribed = uiState.isSubscribed
+    val showDetails = uiState.details
 
     var selectedEpisode by remember { mutableStateOf<Episode?>(null) }
     var showFullScreenPoster by remember { mutableStateOf(false) }
@@ -58,7 +59,7 @@ fun DetailScreen(
     var isEpisodesExpanded by remember { mutableStateOf(false) }
     var visibleEpisodesCount by remember { mutableStateOf(10) }
     val visibleEpisodes = episodes.take(visibleEpisodesCount)
-    val canSubscribe by viewModel.canSubscribe.collectAsState()
+    val canSubscribe = uiState.canSubscribe
 
     Box(modifier = Modifier.fillMaxSize().background(DarkBg)) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -77,7 +78,7 @@ fun DetailScreen(
 
                         if (showDetails != null) {
                             Text(
-                                text = showDetails!!.name,
+                                text = showDetails!!.title,
                                 color = Color.White,
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold,
@@ -125,8 +126,8 @@ fun DetailScreen(
 
                         if (showDetails != null) {
                             val cleanSummary = showDetails!!.overview?.replace(Regex("<.*?>"), "") ?: "No description available."
-                            val rating = showDetails!!.vote_average?.let { String.format(Locale.US, "%.1f", it) + " ⭐" } ?: "No rating"
-                            val genres = showDetails!!.genres?.joinToString(", ") { it.name } ?: ""
+                            val rating = showDetails!!.rating?.let { String.format(Locale.US, "%.1f", it) + " ⭐" } ?: "No rating"
+                            val genres = showDetails!!.genres.joinToString(", ")
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -166,7 +167,7 @@ fun DetailScreen(
                                 )
 
                                 AsyncImage(
-                                    model = showDetails!!.getFullPosterUrl(),
+                                    model = showDetails!!.posterUrl,
                                     contentDescription = null,
                                     modifier = Modifier
                                         .width(110.dp)
@@ -254,7 +255,7 @@ fun DetailScreen(
                     .background(Color.Black)
             ) {
                 AsyncImage(
-                    model = showDetails!!.getFullPosterUrl(),
+                    model = showDetails!!.posterUrl,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit

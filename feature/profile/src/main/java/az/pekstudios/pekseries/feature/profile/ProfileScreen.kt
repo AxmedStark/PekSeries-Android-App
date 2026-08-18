@@ -36,7 +36,7 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val stats by viewModel.profileStats.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     val prefs = remember { context.getSharedPreferences("pek_prefs", Context.MODE_PRIVATE) }
 
     var pushEnabled by remember { mutableStateOf(prefs.getBoolean("push_enabled", true)) }
@@ -111,9 +111,9 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(30.dp))
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            StatCard(stats.first.toString(), "SERIES")
-            StatCard(stats.second.toString(), "EPISODES")
-            StatCard(stats.third.toString(), "HOURS")
+            StatCard(uiState.stats.seriesCount.toString(), "SERIES")
+            StatCard(uiState.stats.episodeCount.toString(), "EPISODES")
+            StatCard(uiState.stats.totalHours.toString(), "HOURS")
         }
 
         Spacer(modifier = Modifier.height(30.dp))

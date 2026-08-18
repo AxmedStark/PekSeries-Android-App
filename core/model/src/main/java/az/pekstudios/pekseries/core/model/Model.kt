@@ -65,3 +65,30 @@ data class TvMazeEpisodeDto(
     val runtime: Int? = null,
     val show: TvMazeShowDto
 )
+
+/**
+ * Show metadata for the detail screen, mapped from the TMDB response so that no
+ * wire DTO reaches the UI.
+ */
+data class ShowDetails(
+    val id: String,
+    val title: String,
+    val overview: String?,
+    val rating: Double?,
+    val genres: List<String> = emptyList(),
+    val posterUrl: String? = null,
+    val imdbId: String? = null,
+    val tvdbId: Int? = null,
+)
+
+data class WatchStats(
+    val seriesCount: Int = 0,
+    val episodeCount: Int = 0,
+    val totalMinutes: Int = 0,
+) {
+    val totalHours: Int get() = totalMinutes / 60
+
+    companion object {
+        val EMPTY = WatchStats()
+    }
+}

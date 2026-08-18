@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import az.pekstudios.pekseries.core.model.Show
+import az.pekstudios.pekseries.core.ui.component.PekErrorView
 import az.pekstudios.pekseries.core.ui.theme.*
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
@@ -42,12 +43,19 @@ fun WatchListScreen(
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
 
-    val isInitialLoading by viewModel.isInitialLoading.collectAsState()
-    val isRefreshing by viewModel.isRefreshing.collectAsState()
-    val todayEpisodes by viewModel.todayEpisodes.collectAsState()
-    val subscriptions by viewModel.subscriptions.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val isInitialLoading = uiState.isInitialLoading
+    val isRefreshing = uiState.isRefreshing
+    val todayEpisodes = uiState.upcoming
+    val subscriptions = uiState.subscriptions
 
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFF121212))) {
+        // Surfaced instead of leaving stale lists on screen with no explanation,
+        // which is what the old empty catch block did.
+        uiState.error?.let { error ->
+            PekErrorView(error = error, onRetry = viewModel::retry)
+        }
+
         TabRow(
             selectedTabIndex = pagerState.currentPage,
             containerColor = Color(0xFF121212),

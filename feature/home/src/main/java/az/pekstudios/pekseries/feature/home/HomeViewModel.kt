@@ -2,7 +2,9 @@ package az.pekstudios.pekseries.feature.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import az.pekstudios.pekseries.core.network.repository.SeriesRepository
+import az.pekstudios.pekseries.core.domain.DataError
+import az.pekstudios.pekseries.core.domain.PekResult
+import az.pekstudios.pekseries.core.domain.repository.ShowRepository
 import az.pekstudios.pekseries.core.model.Show
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,12 +16,28 @@ import javax.inject.Inject
 sealed interface HomeUiState {
     data object Loading : HomeUiState
     data class Success(val shows: List<Show>) : HomeUiState
-    data class Error(val message: String) : HomeUiState
+
+    /** Reached the server, but there is genuinely nothing to show. */
+    data object Empty : HomeUiState
+
+    data class Error(val error: DataError) : HomeUiState
+}
+
+enum class HomeCategory(val label: String) {
+    AiringToday("Airing Today"),
+    Popular("Popular"),
+    Upcoming("Upcoming"),
+    ;
+
+    companion object {
+        fun fromLabel(label: String): HomeCategory =
+            entries.firstOrNull { it.label == label } ?: AiringToday
+    }
 }
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val repository: SeriesRepository
+    private val showRepository: ShowRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
@@ -37,7 +55,7 @@ class HomeViewModel @Inject constructor(
         "Mystery" to "9648",
         "Reality" to "10764",
         "Talk" to "10767",
-        "Western" to "10770"
+        "Western" to "10770",
     )
 
     private val typeMap = mapOf(
@@ -46,43 +64,48 @@ class HomeViewModel @Inject constructor(
         "Documentary" to "0",
         "Reality" to "3",
         "Talk Show" to "5",
-        "News" to "1"
+        "News" to "1",
     )
 
     init {
-        loadEpisodes("Airing Today")
+        loadEpisodes()
     }
 
-    fun loadEpisodes(filterCategory: String = "Airing Today") {
+    fun loadEpisodes(filterCategory: String = HomeCategory.AiringToday.label) {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
-            try {
-                val shows = when (filterCategory) {
-                    "Popular" -> repository.getPopularToday()
-                    "Upcoming" -> repository.getUpcomingPremieres()
-                    "Airing Today" -> repository.getTodayEpisodes()
-                    else -> repository.getTodayEpisodes()
-                }
-                _uiState.value = HomeUiState.Success(shows)
-            } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error("Error: ${e.message}")
+
+            val result = when (HomeCategory.fromLabel(filterCategory)) {
+                HomeCategory.Popular -> showRepository.getTrending()
+                HomeCategory.Upcoming -> showRepository.getUpcomingPremieres()
+                HomeCategory.AiringToday -> showRepository.getAiringToday()
             }
+            _uiState.value = result.toUiState()
         }
     }
 
     fun applyFilters(genre: String, type: String, year: String) {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
-            try {
-                val genreId = if (genre == "All" || genre == "Genre") null else genreMap[genre]
-                val typeId = if (type == "All" || type == "Type") null else typeMap[type]
-                val yearQuery = if (year == "All" || year == "Year") null else year
 
-                val shows = repository.discoverShows(genreId, yearQuery, typeId)
-                _uiState.value = HomeUiState.Success(shows)
-            } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error("Filter error: ${e.message}")
-            }
+            _uiState.value = showRepository.discover(
+                genreId = genreMap[genre]?.takeUnless { genre.isUnset() },
+                year = year.takeUnless { it.isUnset() },
+                typeId = typeMap[type]?.takeUnless { type.isUnset() },
+            ).toUiState()
         }
+    }
+
+    fun retry() = loadEpisodes()
+
+    private fun String.isUnset(): Boolean = this == "All" || this in UNSET_LABELS
+
+    private fun PekResult<List<Show>>.toUiState(): HomeUiState = when (this) {
+        is PekResult.Failure -> HomeUiState.Error(error)
+        is PekResult.Success -> if (data.isEmpty()) HomeUiState.Empty else HomeUiState.Success(data)
+    }
+
+    private companion object {
+        val UNSET_LABELS = setOf("Genre", "Type", "Year")
     }
 }
