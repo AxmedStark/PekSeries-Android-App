@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.pekseries.android.feature)
-    alias(libs.plugins.pekseries.android.firebase)
 }
 
 android {
@@ -11,8 +10,4 @@ dependencies {
     implementation(projects.core.domain)
 
     implementation(libs.coil.compose)
-
-    // TODO(P1): HomeScreen reads FirebaseAuth straight from the Composable.
-    //  That belongs behind a repository so the screen can be previewed and tested.
-    implementation(libs.firebase.auth)
 }

@@ -1,8 +1,10 @@
 package az.pekstudios.pekseries.feature.home
 
+import app.cash.turbine.test
 import az.pekstudios.pekseries.core.domain.DataError
 import az.pekstudios.pekseries.core.domain.PekResult
 import az.pekstudios.pekseries.core.testing.repository.FakeShowRepository
+import az.pekstudios.pekseries.core.testing.repository.FakeUserProfileRepository
 import az.pekstudios.pekseries.core.testing.repository.TestData
 import az.pekstudios.pekseries.core.testing.util.MainDispatcherRule
 import com.google.common.truth.Truth.assertThat
@@ -16,8 +18,9 @@ class HomeViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val repository = FakeShowRepository()
+    private val profileRepository = FakeUserProfileRepository()
 
-    private fun viewModel() = HomeViewModel(repository)
+    private fun viewModel() = HomeViewModel(repository, profileRepository)
 
     @Test
     fun `loads airing today on construction`() = runTest {
@@ -100,6 +103,19 @@ class HomeViewModelTest {
         vm.applyFilters(genre = "Comedy", type = "Miniseries", year = "2024")
 
         assertThat(repository.lastDiscoverArgs).isEqualTo(Triple("35", "2024", "2"))
+    }
+
+    @Test
+    fun `the greeting follows the profile repository, not FirebaseAuth`() = runTest {
+        profileRepository.profileFlow.value =
+            profileRepository.profileFlow.value.copy(displayName = "Ahmed Stark")
+
+        // profile is a WhileSubscribed StateFlow, so it only starts collecting
+        // upstream once something observes it.
+        viewModel().profile.test {
+            assertThat(expectMostRecentItem().displayName).isEqualTo("Ahmed Stark")
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test

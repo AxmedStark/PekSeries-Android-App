@@ -5,6 +5,16 @@ All notable changes to the PekSeries project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.1] - 2026-08-18
+### Fixed
+- **Push Toggle Froze The UI:** the switch renders from the preferences Flow, but `setPushEnabled` reconciled FCM topics *first* — a Firestore read plus one round trip per subscribed show — and only wrote the preference afterwards, while the switch was disabled throughout. The preference is now written first so the switch moves instantly; topic reconciliation continues in the background and rolls the preference back only if it fails.
+- **Login Screen Flashed On Every Launch:** `isUserLoggedIn` was seeded with `false` and only corrected once the auth listener fired, so an already-signed-in user saw the login screen for a moment on every cold start. Introduced in 1.10.1 when the one-shot `currentUser` read was replaced by an `AuthStateListener`; now seeded synchronously via `AuthRepository.isSignedInNow()`.
+- **Profile Name Off-Centre:** the edit button pushed the name to the left. A leading spacer matching the icon's 48dp touch target keeps the name centred with the button beside it. Long names now ellipsize instead of wrapping.
+- **Log Out Button Floated Mid-Page:** moved into the Scaffold's `bottomBar`, so it stays pinned to the bottom instead of trailing the scrolling content.
+- **Home Avatar Did Nothing:** `HomeScreen` already had an `onNavigateToProfile` handler on the avatar, but `PekSeriesApp` never passed one, so the default no-op ran. Tapping it now opens the Profile tab.
+- **Filter Dropdowns Covered The Screen:** the year list renders nearly 40 entries with no height limit. Capped to five rows; Material's menu content already scrolls.
+- **Home Greeting Ignored Profile Edits:** `HomeScreen` read `FirebaseAuth` directly, so a name or photo customised on the profile screen never appeared in the greeting. It now reads the same `UserProfileRepository` as the profile screen, and `:feature:home` no longer depends on `firebase-auth` at all.
+
 ## [1.11.0] - 2026-08-18
 ### Added
 - **Test Suite:** 92 unit tests across 13 classes, covering the domain algebra, error mapping, DTO mappers, DAO behaviour, preference persistence, and every ViewModel including its failure paths. The project previously had zero real tests — only 24 generated stubs asserting `2 + 2 == 4`.

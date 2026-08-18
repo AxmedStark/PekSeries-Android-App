@@ -28,7 +28,6 @@ import az.pekstudios.pekseries.core.ui.component.PekErrorView
 import az.pekstudios.pekseries.core.ui.component.PekLoadingView
 import az.pekstudios.pekseries.core.ui.theme.*
 import coil.compose.AsyncImage
-import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,9 +39,9 @@ fun HomeScreen(
     onNavigateToProfile: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val currentUser = FirebaseAuth.getInstance().currentUser
-    val userName = currentUser?.displayName?.split(" ")?.firstOrNull() ?: "User"
-    val photoUrl = currentUser?.photoUrl
+    val profile by viewModel.profile.collectAsState()
+    val userName = profile.displayName.split(" ").firstOrNull().orEmpty().ifBlank { "User" }
+    val photoUrl = profile.photoUrl
 
     val mainFilters = listOf("Airing Now", "Popular", "Upcoming")
     var selectedMainFilter by remember { mutableStateOf(mainFilters.first()) }
@@ -179,7 +178,12 @@ fun DropdownFilter(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { onExpandedChange(false) },
-            modifier = Modifier.background(CardBg)
+            // The year list is nearly 40 entries and filled almost the whole
+            // screen. Material's menu content already scrolls, so capping the
+            // height to about five rows is all that is needed.
+            modifier = Modifier
+                .background(CardBg)
+                .heightIn(max = DROPDOWN_ITEM_HEIGHT * DROPDOWN_MAX_VISIBLE_ITEMS)
         ) {
             options.forEach { option ->
                 DropdownMenuItem(text = { Text(option, color = Color.White) }, onClick = { onSelect(option); onExpandedChange(false) })
@@ -187,6 +191,9 @@ fun DropdownFilter(
         }
     }
 }
+
+private const val DROPDOWN_MAX_VISIBLE_ITEMS = 5
+private val DROPDOWN_ITEM_HEIGHT = 48.dp
 
 @Composable
 fun HomeShowCard(show: Show, onCardClick: () -> Unit) {

@@ -11,6 +11,16 @@ interface AuthRepository {
      */
     val isSignedIn: Flow<Boolean>
 
+    /**
+     * The state that is already known synchronously, used as the initial value
+     * of the UI's StateFlow.
+     *
+     * Without it the flow starts at `false` and the login screen is rendered for
+     * a frame or two on every launch before the auth listener reports the real
+     * state - a visible flash for an already-signed-in user.
+     */
+    fun isSignedInNow(): Boolean
+
     suspend fun signInWithEmail(email: String, password: String): PekResult<Unit>
 
     suspend fun registerWithEmail(email: String, password: String): PekResult<Unit>
