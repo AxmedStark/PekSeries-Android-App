@@ -38,7 +38,4 @@ dependencies {
     // variant needs the no-op artifact that keeps the same API surface.
     debugImplementation(libs.chucker.debug)
     releaseImplementation(libs.chucker.release)
-
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.truth)
 }

@@ -5,6 +5,18 @@ All notable changes to the PekSeries project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-08-18
+### Added
+- **Test Suite:** 92 unit tests across 13 classes, covering the domain algebra, error mapping, DTO mappers, DAO behaviour, preference persistence, and every ViewModel including its failure paths. The project previously had zero real tests — only 24 generated stubs asserting `2 + 2 == 4`.
+- **`:core:testing` Module:** shared hand-written fakes (`FakeShowRepository`, `FakeSubscriptionRepository`, `FakeAuthRepository`, `FakeUserProfileRepository`), `TestData` builders, and a `MainDispatcherRule`. A module under test now declares a single `testImplementation(projects.core.testing)`; the feature convention plugin wires it automatically.
+- **Regression Tests For Fixed Bugs:** each significant bug from 1.10.x is pinned by a test — search debouncing to a single request, watchlist surfacing rather than swallowing failures, empty-vs-error being distinguishable, the push toggle reaching the topic layer, `CancellationException` being rethrown, and the watch-stats runtime fallback.
+- **Documentation:** a real `README.md` (setup, variants, versioning, secrets, commands) and `ARCHITECTURE.md` covering the module graph, dependency rules, the error-handling model, the notification flow, and the AGP 9 convention-plugin caveat. Both include Mermaid diagrams.
+
+### Changed
+- **Robolectric:** upgraded to 4.16.1 for SDK 36 support, then pinned tests to `@Config(sdk = [35])` because emulating SDK 36 requires Java 21 while the toolchain is Java 17.
+- **Test Configuration:** `failOnNoDiscoveredTests` is disabled in the library convention plugin, so an aggregate `./gradlew test` does not fail on modules that legitimately carry no unit tests.
+- Library modules now set `testOptions.unitTests.isIncludeAndroidResources = true` for Robolectric.
+
 ## [1.10.1] - 2026-08-18
 ### Fixed
 - **Push Notifications Did Nothing When Tapped:** `showNotification()` built a notification with no `setContentIntent`, so there was no `PendingIntent` anywhere in the app. Because the Cloud Function sends *data-only* messages, FCM never auto-displayed a notification either, meaning the `showId` extra `MainActivity` read was never populated by anyone. Deep linking was non-functional in every case, not merely on the foreground path.

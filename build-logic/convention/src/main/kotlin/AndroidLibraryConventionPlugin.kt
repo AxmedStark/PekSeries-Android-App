@@ -15,6 +15,9 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
         extensions.configure<LibraryExtension> {
             configureKotlinAndroid(this)
 
+            // Robolectric-backed tests need the merged manifest and resources.
+            testOptions.unitTests.isIncludeAndroidResources = true
+
             defaultConfig {
                 testInstrumentationRunner = PekBuildConfig.TEST_RUNNER
 

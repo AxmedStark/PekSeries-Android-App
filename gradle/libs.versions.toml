@@ -38,8 +38,10 @@ timber = "5.0.1"
 espressoCore = "3.5.1"
 junit = "4.13.2"
 javaxInject = "1"
+androidxTestCore = "1.6.1"
 junitVersion = "1.1.5"
 mockk = "1.13.13"
+robolectric = "4.16.1"
 truth = "1.4.4"
 turbine = "1.2.0"
 
@@ -111,10 +113,12 @@ chucker-release = { module = "com.github.chuckerteam.chucker:library-no-op", ver
 # --- Testing ---
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-test-core = { module = "androidx.test:core-ktx", version.ref = "androidxTestCore" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 

@@ -28,10 +28,9 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
             add("implementation", libs.library("kotlinx-coroutines-android"))
             add("implementation", libs.library("timber"))
 
-            add("testImplementation", libs.library("kotlinx-coroutines-test"))
-            add("testImplementation", libs.library("turbine"))
-            add("testImplementation", libs.library("mockk"))
-            add("testImplementation", libs.library("truth"))
+            // Brings junit, truth, turbine, mockk, coroutines-test and the
+            // shared fakes transitively, so a feature declares nothing extra.
+            add("testImplementation", project(":core:testing"))
         }
     }
 }

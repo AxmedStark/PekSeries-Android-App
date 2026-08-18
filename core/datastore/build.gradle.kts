@@ -12,6 +12,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.timber)
 
+    testImplementation(projects.core.testing)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.truth)
 }
