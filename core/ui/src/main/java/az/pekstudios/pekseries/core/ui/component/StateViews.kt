@@ -32,6 +32,14 @@ fun DataError.toUserMessage(): String = when (this) {
     DataError.Unauthenticated -> "Please sign in again to continue."
     DataError.Server -> "The service is having trouble. Try again shortly."
     is DataError.Unknown -> "Something went wrong. Please try again."
+
+    DataError.Auth.InvalidCredentials -> "That email or password is not right."
+    DataError.Auth.InvalidEmail -> "That does not look like a valid email address."
+    DataError.Auth.EmailAlreadyInUse -> "An account already exists for that email."
+    DataError.Auth.WeakPassword -> "Please choose a password of at least 6 characters."
+    DataError.Auth.UserDisabled -> "This account has been disabled."
+    DataError.Auth.RequiresRecentLogin -> "Please sign in again to continue."
+    DataError.Auth.TooManyAttempts -> "Too many attempts. Try again in a few minutes."
 }
 
 @Composable

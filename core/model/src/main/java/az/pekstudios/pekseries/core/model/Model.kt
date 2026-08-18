@@ -92,3 +92,17 @@ data class WatchStats(
         val EMPTY = WatchStats()
     }
 }
+
+/**
+ * What the profile screen renders: provider identity with any local override
+ * already applied, so the UI never has to decide which value wins.
+ */
+data class UserProfile(
+    val displayName: String = "",
+    val email: String = "",
+    val photoUrl: String? = null,
+    val pushEnabled: Boolean = true,
+    val isSignedIn: Boolean = false,
+    val hasCustomDisplayName: Boolean = false,
+    val hasCustomPhoto: Boolean = false,
+)

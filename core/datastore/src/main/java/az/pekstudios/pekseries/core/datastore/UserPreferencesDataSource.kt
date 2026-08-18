@@ -45,18 +45,26 @@ class UserPreferencesDataSource @Inject constructor(
         }
 
     /** Passing null clears the override and restores the auth provider's value. */
-    suspend fun setDisplayNameOverride(name: String?) = dataStore.edit { prefs ->
-        if (name.isNullOrBlank()) prefs.remove(Keys.DISPLAY_NAME) else prefs[Keys.DISPLAY_NAME] = name
+    suspend fun setDisplayNameOverride(name: String?) {
+        dataStore.edit { prefs ->
+            if (name.isNullOrBlank()) prefs.remove(Keys.DISPLAY_NAME) else prefs[Keys.DISPLAY_NAME] = name
+        }
     }
 
-    suspend fun setPhotoUriOverride(uri: String?) = dataStore.edit { prefs ->
-        if (uri.isNullOrBlank()) prefs.remove(Keys.PHOTO_URI) else prefs[Keys.PHOTO_URI] = uri
+    suspend fun setPhotoUriOverride(uri: String?) {
+        dataStore.edit { prefs ->
+            if (uri.isNullOrBlank()) prefs.remove(Keys.PHOTO_URI) else prefs[Keys.PHOTO_URI] = uri
+        }
     }
 
-    suspend fun setPushEnabled(enabled: Boolean) = dataStore.edit { prefs ->
-        prefs[Keys.PUSH_ENABLED] = enabled
+    suspend fun setPushEnabled(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.PUSH_ENABLED] = enabled
+        }
     }
 
     /** Called on logout so the next account does not inherit these overrides. */
-    suspend fun clear() = dataStore.edit { prefs -> prefs.clear() }
+    suspend fun clear() {
+        dataStore.edit { prefs -> prefs.clear() }
+    }
 }

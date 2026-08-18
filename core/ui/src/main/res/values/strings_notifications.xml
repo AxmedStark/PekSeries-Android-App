@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_new_episodes">New episodes</string>
+    <string name="notification_default_title">PekSeries</string>
+    <string name="notification_default_body">A new episode is out.</string>
+</resources>

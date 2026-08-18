@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!--
+        Placeholder only. The real value is generated into the :app module by the
+        google-services plugin from google-services.json, and app resources win
+        over library resources during merge (verified: the merged table holds the
+        real ...apps.googleusercontent.com id).
+
+        Do NOT delete this: with non-transitive R classes, LoginScreen's
+        R.string.default_web_client_id will not compile without a declaration in
+        this module. Do NOT paste the real id here either — it belongs in
+        google-services.json, which is gitignored.
+    -->
     <string name="default_web_client_id">your_web_client_id_here</string>
+    <string name="google_sign_in_failed">Google sign-in failed (code %1$d)</string>
 </resources>
