@@ -1,30 +1,25 @@
 import java.util.Properties
 
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.hilt)
-    alias(libs.plugins.ksp)
+    alias(libs.plugins.pekseries.android.library)
+    alias(libs.plugins.pekseries.android.hilt)
+    alias(libs.plugins.pekseries.android.firebase)
 }
 
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localProperties.load(localPropertiesFile.inputStream())
+// Environment first so CI never has to write a file to disk; secrets.properties
+// is the local-development fallback and is gitignored.
+val secrets = Properties().apply {
+    rootProject.file("secrets.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
 }
-val tmdbApiKey = localProperties.getProperty("TMDB_API_KEY") ?: ""
+val tmdbApiKey: String = System.getenv("TMDB_API_KEY") ?: secrets.getProperty("TMDB_API_KEY") ?: ""
 
 android {
     namespace = "az.pekstudios.pekseries.core.network"
-    compileSdk = 36
 
     defaultConfig {
-        minSdk = 26
         buildConfigField("String", "TMDB_API_KEY", "\"$tmdbApiKey\"")
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        buildConfigField("String", "TMDB_BASE_URL", "\"https://api.themoviedb.org/3/\"")
+        buildConfigField("String", "TVMAZE_BASE_URL", "\"https://api.tvmaze.com/\"")
     }
 
     buildFeatures {
@@ -32,29 +27,26 @@ android {
     }
 }
 
-kotlin {
-    jvmToolchain(17)
-}
-
 dependencies {
-    implementation(project(":core:model"))
+    implementation(projects.core.model)
 
     implementation(libs.retrofit)
-    implementation(libs.converter.gson)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp.logging.interceptor)
 
-    // Firebase
-    implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
     implementation(libs.kotlinx.coroutines.play.services)
 
-    // Hilt
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.android.compiler)
-
-    // Tools
     implementation(libs.timber)
-    implementation(libs.okhttp.logging.interceptor)
-    debugImplementation(libs.library) // Chucker
+
+    // Chucker is referenced unconditionally from NetworkModule, so the release
+    // variant needs the no-op artifact that keeps the same API surface.
+    // Without it, release simply does not compile.
+    debugImplementation(libs.chucker.debug)
+    releaseImplementation(libs.chucker.release)
+
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.truth)
 }

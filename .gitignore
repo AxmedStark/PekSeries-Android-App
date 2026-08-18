@@ -1,39 +1,42 @@
-*.iml
+# Gradle / build output
 .gradle/
-.idea/
-/.idea/
-.idea/workspace.xml
-.idea/tasks.xml
-.idea/gradle.xml
-.idea/assetWizardSettings.xml
-.idea/dictionaries
-.idea/libraries
-.idea/caches
-.idea/modules.xml
-.DS_Store
-Thumbs.db
-local.properties
-/local.properties
 build/
 */build/
+**/build/
+buildSrc/build/
+build-logic/**/build/
 captures/
 .externalNativeBuild
 .cxx/
+.kotlin/
+local.properties
+
+# IDE
+*.iml
+.idea/
+.DS_Store
+Thumbs.db
+
+# Secrets — never commit.
+# secrets.properties.example is the committed template; the real file is not.
+secrets.properties
 *.jks
 *.keystore
-google-services.json
-/app/google-services.json
+firebase-key.json
+.secret
+
+# Firebase config carries project identifiers; keep it out of a public repo.
+# NOTE: scoped deliberately. A bare "*.json" rule would also swallow Room
+# schemas, test fixtures and CI configs.
+app/google-services.json
+app/src/*/google-services.json
+
+# Firebase Cloud Functions
 functions/node_modules/
 functions/lib/
-firebase-key.json
 functions/.firebase/
-functions/package-lock.json
 .firebase/
-.secret
-*.log
-# Секреты
-*.json
 firebase-debug.log
-/functions/index.js
-/functions/package.json
-/functions/package-lock.json
+
+# Logs
+*.log
