@@ -52,7 +52,9 @@ class LoginViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
-            initialValue = false,
+            // Seeded synchronously: starting at false rendered the login
+            // screen for a moment on every cold start.
+            initialValue = authRepository.isSignedInNow(),
         )
 
     private val _uiState = MutableStateFlow(LoginUiState())

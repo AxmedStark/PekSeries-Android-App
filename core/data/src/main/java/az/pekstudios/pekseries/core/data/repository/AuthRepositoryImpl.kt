@@ -24,6 +24,8 @@ class AuthRepositoryImpl @Inject constructor(
         awaitClose { auth.removeAuthStateListener(listener) }
     }.distinctUntilChanged()
 
+    override fun isSignedInNow(): Boolean = auth.currentUser != null
+
     override suspend fun signInWithEmail(email: String, password: String): PekResult<Unit> =
         runCatchingData("signInWithEmail") {
             auth.signInWithEmailAndPassword(email.trim(), password).await()

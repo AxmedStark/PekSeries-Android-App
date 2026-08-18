@@ -84,6 +84,9 @@ fun PekSeriesApp(
     }
 }
 
+/** Index of the Profile entry in the bottom navigation bar. */
+private const val PROFILE_TAB_INDEX = 3
+
 @Composable
 fun PekSeriesMainContent(
     onLogout: () -> Unit,
@@ -130,7 +133,10 @@ fun PekSeriesMainContent(
             when (selectedScreen) {
                 0 -> HomeScreen(
                     onNavigateToDetail = onNavigateToDetail,
-                    onNavigateToNotifications = onNavigateToNotifications
+                    onNavigateToNotifications = onNavigateToNotifications,
+                    // The avatar already had a click handler, but nothing was
+                    // passed in, so it silently did nothing.
+                    onNavigateToProfile = { selectedScreen = PROFILE_TAB_INDEX }
                 )
                 1 -> SearchScreen(
                     onNavigateToDetail = onNavigateToDetail

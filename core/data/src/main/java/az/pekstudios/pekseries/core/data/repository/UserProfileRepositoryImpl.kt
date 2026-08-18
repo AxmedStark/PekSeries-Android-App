@@ -76,13 +76,24 @@ class UserProfileRepositoryImpl @Inject constructor(
      * ever read, so turning notifications off changed nothing. Since delivery is
      * driven by FCM topics, the toggle has to subscribe/unsubscribe them.
      */
+    /**
+     * Writes the preference first, then reconciles FCM topics.
+     *
+     * The order matters for responsiveness: the switch renders from the
+     * preferences Flow, so a local write moves it instantly, whereas
+     * reconciling topics means a Firestore read plus one FCM round trip per
+     * subscribed show and can take seconds. Doing that first made the toggle
+     * appear frozen on every tap.
+     *
+     * If reconciliation fails the preference is rolled back, so the switch
+     * cannot sit on "off" while the topics are still subscribed.
+     */
     override suspend fun setPushEnabled(enabled: Boolean): PekResult<Unit> {
-        val result = subscriptionRepository.setTopicsEnabled(enabled)
+        preferences.setPushEnabled(enabled)
 
-        // Persist only once the topic change actually succeeded, so the switch
-        // cannot show "off" while the topics are still subscribed.
-        if (result is PekResult.Success) {
-            preferences.setPushEnabled(enabled)
+        val result = subscriptionRepository.setTopicsEnabled(enabled)
+        if (result is PekResult.Failure) {
+            preferences.setPushEnabled(!enabled)
         }
         return result
     }

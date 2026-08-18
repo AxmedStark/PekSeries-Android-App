@@ -5,11 +5,15 @@ import androidx.lifecycle.viewModelScope
 import az.pekstudios.pekseries.core.domain.DataError
 import az.pekstudios.pekseries.core.domain.PekResult
 import az.pekstudios.pekseries.core.domain.repository.ShowRepository
+import az.pekstudios.pekseries.core.domain.repository.UserProfileRepository
+import az.pekstudios.pekseries.core.model.UserProfile
 import az.pekstudios.pekseries.core.model.Show
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -38,7 +42,19 @@ enum class HomeCategory(val label: String) {
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val showRepository: ShowRepository,
+    userProfileRepository: UserProfileRepository,
 ) : ViewModel() {
+
+    /**
+     * Sourced from the profile repository rather than FirebaseAuth directly, so
+     * a name or photo edited on the profile screen shows up in the greeting too.
+     */
+    val profile: StateFlow<UserProfile> = userProfileRepository.profile
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+            initialValue = UserProfile(),
+        )
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -107,5 +123,6 @@ class HomeViewModel @Inject constructor(
 
     private companion object {
         val UNSET_LABELS = setOf("Genre", "Type", "Year")
+        const val STOP_TIMEOUT_MS = 5_000L
     }
 }

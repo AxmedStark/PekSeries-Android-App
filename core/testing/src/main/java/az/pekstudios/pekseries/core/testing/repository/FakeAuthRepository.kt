@@ -10,6 +10,10 @@ class FakeAuthRepository : AuthRepository {
     private val signedIn = MutableStateFlow(false)
     override val isSignedIn: Flow<Boolean> = signedIn
 
+    override fun isSignedInNow(): Boolean = signedIn.value
+
+    fun setSignedIn(value: Boolean) { signedIn.value = value }
+
     var signInResult: PekResult<Unit> = PekResult.Success(Unit)
     var registerResult: PekResult<Unit> = PekResult.Success(Unit)
     var googleResult: PekResult<Unit> = PekResult.Success(Unit)

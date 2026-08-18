@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -86,6 +87,21 @@ fun ProfileScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = Color(0xFF121212),
+        bottomBar = {
+            OutlinedButton(
+                onClick = onLogout,
+                border = BorderStroke(1.dp, Primary.copy(alpha = 0.5f)),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = PekYellow),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .height(50.dp),
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ExitToApp, null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Log Out")
+            }
+        },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -124,12 +140,22 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // The leading spacer matches the trailing IconButton's 48dp touch
+            // target, so the name itself sits centred rather than being pushed
+            // left by the edit button.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Spacer(modifier = Modifier.width(48.dp))
                 Text(
                     text = profile.displayName,
                     color = Color.White,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 IconButton(onClick = viewModel::startEditingProfile) {
                     Icon(
@@ -165,24 +191,9 @@ fun ProfileScreen(
                 subtitle = "New episodes for shows you follow",
                 icon = Icons.Filled.Notifications,
                 checked = profile.pushEnabled,
-                enabled = !uiState.isTogglingPush,
                 onCheckedChange = viewModel::setPushEnabled,
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            OutlinedButton(
-                onClick = onLogout,
-                border = BorderStroke(1.dp, Primary.copy(alpha = 0.5f)),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = PekYellow),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ExitToApp, null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Log Out")
-            }
         }
     }
 }

@@ -90,9 +90,9 @@ class ProfileViewModel @Inject constructor(
     }
 
     /**
-     * Subscribes or unsubscribes every FCM topic. The switch stays disabled
-     * while in flight, because the previous value is still the truth until the
-     * topic change succeeds.
+     * The switch is deliberately never disabled. The preference is written
+     * locally first, so it flips immediately; topic reconciliation continues in
+     * the background and only reports if it fails.
      */
     fun setPushEnabled(enabled: Boolean) {
         viewModelScope.launch {
