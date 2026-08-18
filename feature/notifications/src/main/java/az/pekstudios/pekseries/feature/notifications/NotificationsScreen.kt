@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import az.pekstudios.pekseries.feature.notifications.data.NotificationEntity
+import az.pekstudios.pekseries.core.database.NotificationEntity
 import az.pekstudios.pekseries.core.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*

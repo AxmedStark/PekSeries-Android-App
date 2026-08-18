@@ -35,6 +35,8 @@ rootProject.name = "PekSeries"
 include(":app")
 
 // Core
+include(":core:database")
+include(":core:datastore")
 include(":core:model")
 include(":core:network")
 include(":core:ui")

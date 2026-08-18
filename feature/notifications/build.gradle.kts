@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.pekseries.android.feature)
-    alias(libs.plugins.pekseries.android.room)
 }
 
 android {
@@ -8,5 +7,6 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.database)
     implementation(projects.core.network)
 }
