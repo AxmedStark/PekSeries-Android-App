@@ -23,6 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import az.pekstudios.pekseries.core.model.Show
+import az.pekstudios.pekseries.core.ui.component.PekEmptyView
+import az.pekstudios.pekseries.core.ui.component.PekErrorView
+import az.pekstudios.pekseries.core.ui.component.PekLoadingView
 import az.pekstudios.pekseries.core.ui.theme.*
 import coil.compose.AsyncImage
 import com.google.firebase.auth.FirebaseAuth
@@ -137,13 +140,24 @@ fun HomeScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
+            // Exhaustive on purpose: an `else -> Unit` here previously meant a
+            // failed load rendered a blank screen with no way to retry.
             when (val state = uiState) {
                 is HomeUiState.Success ->
                     items(state.shows) {
                         HomeShowCard(it) { onNavigateToDetail(it.id) }
                         Spacer(modifier = Modifier.height(12.dp))
                     }
-                else -> Unit
+
+                HomeUiState.Loading -> item { PekLoadingView() }
+
+                HomeUiState.Empty -> item {
+                    PekEmptyView("No shows to show here right now.")
+                }
+
+                is HomeUiState.Error -> item {
+                    PekErrorView(error = state.error, onRetry = viewModel::retry)
+                }
             }
         }
     }

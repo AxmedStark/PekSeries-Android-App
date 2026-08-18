@@ -50,12 +50,6 @@
 }
 -keepnames class az.pekstudios.pekseries.** extends java.lang.Enum
 
-# PekNotification is nested in SeriesRepository and read back via toObjects().
--keep class az.pekstudios.pekseries.core.network.repository.SeriesRepository$PekNotification {
-    <init>(...);
-    <fields>;
-}
-
 -dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
 

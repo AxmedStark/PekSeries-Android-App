@@ -2,57 +2,44 @@ package az.pekstudios.pekseries.feature.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import az.pekstudios.pekseries.core.network.repository.SeriesRepository
+import az.pekstudios.pekseries.core.domain.PekResult
+import az.pekstudios.pekseries.core.domain.usecase.GetWatchStatsUseCase
+import az.pekstudios.pekseries.core.model.WatchStats
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class ProfileUiState(
+    val stats: WatchStats = WatchStats.EMPTY,
+    val isLoadingStats: Boolean = true,
+)
+
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val repository: SeriesRepository
+    private val getWatchStats: GetWatchStatsUseCase,
 ) : ViewModel() {
 
-    private val _profileStats = MutableStateFlow(Triple(0, 0, 0))
-    val profileStats: StateFlow<Triple<Int, Int, Int>> = _profileStats.asStateFlow()
+    private val _uiState = MutableStateFlow(ProfileUiState())
+    val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
     init {
-        loadProfileStats()
+        loadStats()
     }
 
-    private fun loadProfileStats() {
+    fun loadStats() {
         viewModelScope.launch {
-            val subs = repository.getSubscribedShows()
-            if (subs.isEmpty()) {
-                _profileStats.value = Triple(0, 0, 0)
-                return@launch
+            _uiState.value = ProfileUiState(isLoadingStats = true)
+
+            // Stats are a secondary detail on this screen, so a failure shows
+            // zeroes rather than taking over the whole profile with an error.
+            val stats = when (val result = getWatchStats()) {
+                is PekResult.Success -> result.data
+                is PekResult.Failure -> WatchStats.EMPTY
             }
-
-            val results = coroutineScope {
-                subs.map { show ->
-                    async {
-                        try {
-                            val cleanId = show.id.removePrefix("tvmaze_")
-                            val episodes = repository.getShowEpisodes(cleanId)
-
-                            val totalMinutes = episodes.sumOf { it.runtime ?: 45 }
-                            Pair(episodes.size, totalMinutes)
-                        } catch (e: Exception) {
-                            Pair(0, 0)
-                        }
-                    }
-                }.awaitAll()
-            }
-
-            val totalEpisodes = results.sumOf { it.first }
-            val totalHours = results.sumOf { it.second } / 60
-
-            _profileStats.value = Triple(subs.size, totalEpisodes, totalHours)
+            _uiState.value = ProfileUiState(stats = stats, isLoadingStats = false)
         }
     }
 }

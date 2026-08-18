@@ -11,7 +11,6 @@ android {
 dependencies {
     implementation(projects.core.database)
     implementation(projects.core.model)
-    implementation(projects.core.network)
     implementation(projects.core.ui)
 
     implementation(libs.firebase.messaging)

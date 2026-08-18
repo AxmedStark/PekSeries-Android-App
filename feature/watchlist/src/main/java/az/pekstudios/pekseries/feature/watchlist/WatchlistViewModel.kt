@@ -2,8 +2,10 @@ package az.pekstudios.pekseries.feature.watchlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import az.pekstudios.pekseries.core.domain.DataError
+import az.pekstudios.pekseries.core.domain.PekResult
+import az.pekstudios.pekseries.core.domain.repository.SubscriptionRepository
 import az.pekstudios.pekseries.core.model.Show
-import az.pekstudios.pekseries.core.network.repository.SeriesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -11,85 +13,64 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class WatchlistUiState(
+    val upcoming: List<Show> = emptyList(),
+    val subscriptions: List<Show> = emptyList(),
+    val isInitialLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
+    val error: DataError? = null,
+) {
+    val isEmpty: Boolean get() = upcoming.isEmpty() && subscriptions.isEmpty()
+}
+
 @HiltViewModel
 class WatchlistViewModel @Inject constructor(
-    private val repository: SeriesRepository
+    private val subscriptionRepository: SubscriptionRepository,
 ) : ViewModel() {
 
-    private val _subscriptions = MutableStateFlow<List<Show>>(emptyList())
-    val subscriptions: StateFlow<List<Show>> = _subscriptions.asStateFlow()
-
-    private val _todayEpisodes = MutableStateFlow<List<Show>>(emptyList())
-    val todayEpisodes: StateFlow<List<Show>> = _todayEpisodes.asStateFlow()
-
-    private val _isInitialLoading = MutableStateFlow(true)
-    val isInitialLoading: StateFlow<Boolean> = _isInitialLoading.asStateFlow()
-
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
-
-    private val _profileStats = MutableStateFlow(Triple(0, 0, 0))
-    val profileStats: StateFlow<Triple<Int, Int, Int>> = _profileStats.asStateFlow()
+    private val _uiState = MutableStateFlow(WatchlistUiState())
+    val uiState: StateFlow<WatchlistUiState> = _uiState.asStateFlow()
 
     init {
-        loadData(isRefresh = false)
-        loadProfileStats()
+        loadData()
     }
 
     fun loadData(isRefresh: Boolean = false) {
         viewModelScope.launch {
-            if (isRefresh) {
-                _isRefreshing.value = true
-            } else if (_todayEpisodes.value.isEmpty() && _subscriptions.value.isEmpty()) {
-                _isInitialLoading.value = true
+            _uiState.update {
+                it.copy(
+                    isRefreshing = isRefresh,
+                    isInitialLoading = !isRefresh && it.isEmpty,
+                    error = null,
+                )
             }
 
-            try {
-                coroutineScope {
-                    val upcomingDeferred = async { repository.getUpcomingSubscribedEpisodes() }
-                    val subscriptionsDeferred = async { repository.getSubscribedShows() }
+            val (upcoming, subscriptions) = coroutineScope {
+                val upcomingDeferred = async { subscriptionRepository.getUpcomingEpisodes() }
+                val subscriptionsDeferred = async { subscriptionRepository.getSubscribedShows() }
+                upcomingDeferred.await() to subscriptionsDeferred.await()
+            }
 
-                    _todayEpisodes.value = upcomingDeferred.await()
-                    _subscriptions.value = subscriptionsDeferred.await()
-                }
-            } catch (e: Exception) {
+            // A failure is surfaced rather than silently leaving the previous
+            // lists on screen, which is what the old empty-catch block did.
+            val error = (upcoming as? PekResult.Failure)?.error
+                ?: (subscriptions as? PekResult.Failure)?.error
 
-            } finally {
-                _isInitialLoading.value = false
-                _isRefreshing.value = false
+            _uiState.update { current ->
+                current.copy(
+                    upcoming = (upcoming as? PekResult.Success)?.data ?: current.upcoming,
+                    subscriptions = (subscriptions as? PekResult.Success)?.data ?: current.subscriptions,
+                    isInitialLoading = false,
+                    isRefreshing = false,
+                    error = error,
+                )
             }
         }
     }
 
-    private fun loadProfileStats() {
-        viewModelScope.launch {
-            val subs = repository.getSubscribedShows()
-            if (subs.isEmpty()) {
-                _profileStats.value = Triple(0, 0, 0)
-                return@launch
-            }
-
-            val results = coroutineScope {
-                subs.map { show ->
-                    async {
-                        try {
-                            val cleanId = show.id.removePrefix("tvmaze_")
-                            val episodes = repository.getShowEpisodes(cleanId)
-                            Pair(episodes.size, episodes.size * 45)
-                        } catch (e: Exception) {
-                            Pair(0, 0)
-                        }
-                    }
-                }.awaitAll()
-            }
-
-            val totalEpisodes = results.sumOf { it.first }
-            val totalMinutes = results.sumOf { it.second }
-
-            _profileStats.value = Triple(subs.size, totalEpisodes, totalMinutes / 60)
-        }
-    }
+    fun retry() = loadData(isRefresh = true)
 }

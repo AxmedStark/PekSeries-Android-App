@@ -39,7 +39,7 @@ object NetworkModule {
     @Singleton
     fun provideTvMazeApi(okHttpClient: OkHttpClient): TvMazeApi {
         return Retrofit.Builder()
-            .baseUrl("https://api.tvmaze.com/")
+            .baseUrl(BuildConfig.TVMAZE_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -50,7 +50,7 @@ object NetworkModule {
     @Singleton
     fun provideTmdbApi(okHttpClient: OkHttpClient): TmdbApi {
         return Retrofit.Builder()
-            .baseUrl("https://api.themoviedb.org/3/")
+            .baseUrl(BuildConfig.TMDB_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
