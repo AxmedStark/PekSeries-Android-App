@@ -5,6 +5,17 @@ All notable changes to the PekSeries project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.2] - 2026-08-18
+### Added
+- **CI on GitHub Actions:** `pr.yml` runs on every pull request and push to `main` — assembles `devDebug`, runs all 93 unit tests, lints, and then assembles `prodRelease` so R8 breakage is caught in CI rather than after a store upload. Test results are published as a check, and reports are uploaded on failure.
+- **Release Pipeline:** `release.yml` triggers on a `v*` tag (or manually with a track selector), builds a signed `bundleProdRelease`, verifies the signature, and uploads to Google Play with the R8 `mapping.txt` so crash reports deobfuscate. `VERSION_BUILD` is stamped from the run number, guaranteeing a strictly increasing `versionCode`.
+- **CI Documentation:** README now lists every required repository secret, how to generate it, and the release procedure.
+
+### Notes
+- Secrets reach the build as environment variables, never files — build-logic reads the environment before `secrets.properties`. Verified locally by building with `secrets.properties` removed entirely and only `TMDB_API_KEY` exported. `google-services.json` and the keystore must be files, so they are decoded from base64 secrets and deleted in an `always()` cleanup step.
+- Signing was verified end to end with a throwaway keystore: `apksigner` confirms the APK carries an APK Signature Scheme v2 signature.
+- The bundle signature check uses `jarsigner -verify | grep "jar verified"`. Testing against a real unsigned bundle showed that neither the filename (an unsigned `.aab` keeps the same name) nor the exit code (`jarsigner` exits 0 and prints "no manifest.") distinguishes signed from unsigned.
+
 ## [1.11.1] - 2026-08-18
 ### Fixed
 - **Push Toggle Froze The UI:** the switch renders from the preferences Flow, but `setPushEnabled` reconciled FCM topics *first* — a Firestore read plus one round trip per subscribed show — and only wrote the preference afterwards, while the switch was disabled throughout. The preference is now written first so the switch moves instantly; topic reconciliation continues in the background and rolls the preference back only if it fails.
