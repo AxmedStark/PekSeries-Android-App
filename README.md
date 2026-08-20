@@ -105,6 +105,51 @@ Verify a deep link without waiting for a real push:
 adb shell am start -a android.intent.action.VIEW -d "pekseries://show/1"
 ```
 
+## CI/CD
+
+Two GitHub Actions workflows:
+
+| Workflow | Trigger | What it does |
+|---|---|---|
+| [`pr.yml`](.github/workflows/pr.yml) | PR / push to `main` | assemble `devDebug`, run all unit tests, lint, then assemble `prodRelease` to prove R8 has not broken Gson/Room reflection |
+| [`release.yml`](.github/workflows/release.yml) | tag `v*`, or manual | build a **signed** `bundleProdRelease`, verify the signature, upload to Google Play |
+
+Secrets are exported as environment variables rather than written to disk —
+build-logic reads the environment before `secrets.properties`, so no credential
+lands on the runner. `google-services.json` and the keystore are the exceptions
+(their tools can only read files); both are materialised from base64 secrets and
+deleted in an `always()` step.
+
+### Required repository secrets
+
+Settings → Secrets and variables → Actions.
+
+| Secret | Used by | How to produce it |
+|---|---|---|
+| `TMDB_API_KEY` | both | From your TMDB account |
+| `GOOGLE_SERVICES_JSON_BASE64` | both | `base64 -i app/google-services.json \| pbcopy` |
+| `PEKSERIES_KEYSTORE_BASE64` | release | `base64 -i upload.jks \| pbcopy` |
+| `PEKSERIES_KEYSTORE_PASSWORD` | release | Keystore password |
+| `PEKSERIES_KEY_ALIAS` | release | Signing key alias |
+| `PEKSERIES_KEY_PASSWORD` | release | Signing key password |
+| `PLAY_SERVICE_ACCOUNT_JSON` | release | Play Console → Setup → API access → service account JSON (paste whole file) |
+
+### Cutting a release
+
+1. Bump `VERSION_MAJOR` / `MINOR` / `PATCH` in `version.properties` and update `CHANGELOG.md`.
+2. Tag and push:
+
+```bash
+git tag v1.11.1 && git push origin v1.11.1
+```
+
+`VERSION_BUILD` is stamped from the workflow run number, so every upload gets a
+strictly increasing `versionCode`. The release defaults to the **internal**
+track; use the manual `workflow_dispatch` trigger to choose another.
+
+The `mapping.txt` is uploaded to Play alongside the bundle so crash reports are
+deobfuscated, and kept as a build artifact for 90 days.
+
 ## Cloud Functions
 
 The push backend lives in `functions/`. `checkNewEpisodes` polls the TVMaze

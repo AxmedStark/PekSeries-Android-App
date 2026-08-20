@@ -1,10 +1,12 @@
 package az.pekstudios.pekseries.core.data.di
 
 import az.pekstudios.pekseries.core.data.repository.AuthRepositoryImpl
+import az.pekstudios.pekseries.core.data.repository.FcmTopicSynchronizer
 import az.pekstudios.pekseries.core.data.repository.ShowRepositoryImpl
 import az.pekstudios.pekseries.core.data.repository.SubscriptionRepositoryImpl
 import az.pekstudios.pekseries.core.data.repository.UserProfileRepositoryImpl
 import az.pekstudios.pekseries.core.domain.repository.AuthRepository
+import az.pekstudios.pekseries.core.domain.repository.TopicSynchronizer
 import az.pekstudios.pekseries.core.domain.repository.ShowRepository
 import az.pekstudios.pekseries.core.domain.repository.SubscriptionRepository
 import az.pekstudios.pekseries.core.domain.repository.UserProfileRepository
@@ -33,4 +35,8 @@ interface DataModule {
     @Binds
     @Singleton
     fun bindUserProfileRepository(impl: UserProfileRepositoryImpl): UserProfileRepository
+
+    @Binds
+    @Singleton
+    fun bindTopicSynchronizer(impl: FcmTopicSynchronizer): TopicSynchronizer
 }
