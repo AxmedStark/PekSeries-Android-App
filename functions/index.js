@@ -24,6 +24,12 @@ exports.checkNewEpisodes = onSchedule(`every ${SCHEDULE_MINUTES} minutes`, async
         const webEpisodes = await webRes.json();
         const allEpisodes = [...tvEpisodes, ...webEpisodes];
 
+        // /schedule puts the show on `show`, but /schedule/web nests it under
+        // `_embedded.show`. Reading ep.show.id directly threw a TypeError on
+        // every streaming entry and aborted the whole run, so web/streaming
+        // shows never produced a notification at all.
+        const showOf = (ep) => ep.show || (ep._embedded && ep._embedded.show);
+
         let notificationsSent = 0;
 
         for (const ep of allEpisodes) {
@@ -32,8 +38,14 @@ exports.checkNewEpisodes = onSchedule(`every ${SCHEDULE_MINUTES} minutes`, async
             const airTime = new Date(ep.airstamp);
 
             if (airTime >= windowStart && airTime <= now) {
-                const showId = ep.show.id;
-                const showName = ep.show.name;
+                const show = showOf(ep);
+                if (!show || show.id === undefined) {
+                    console.warn("Skipping episode with no resolvable show:", ep.id);
+                    continue;
+                }
+
+                const showId = show.id;
+                const showName = show.name;
                 const epString = `S${ep.season} E${ep.number} - ${ep.name}`;
 
                 const hours = String(airTime.getHours()).padStart(2, '0');
@@ -55,8 +67,14 @@ exports.checkNewEpisodes = onSchedule(`every ${SCHEDULE_MINUTES} minutes`, async
                     }
                 };
 
-                await admin.messaging().send(message);
-                notificationsSent++;
+                // Per-episode guard: one bad topic must not abort the run and
+                // silently drop every remaining notification for the hour.
+                try {
+                    await admin.messaging().send(message);
+                    notificationsSent++;
+                } catch (sendError) {
+                    console.error(`Failed to notify show_${showId}:`, sendError.message);
+                }
             }
         }
 

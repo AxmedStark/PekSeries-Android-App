@@ -5,6 +5,11 @@ All notable changes to the PekSeries project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.4] - 2026-08-20
+### Fixed
+- **Cloud Function Crashed On Every Streaming Episode:** `/schedule` returns the show on `ep.show`, but `/schedule/web` nests it under `ep._embedded.show`. The function merged both feeds and read `ep.show.id` unconditionally, so the first web entry threw `TypeError: Cannot read properties of undefined (reading 'id')` and the outer catch aborted the whole hourly run. Confirmed in production logs on 2026-08-20, where four of the seven runs between 01:12 and 07:12 UTC aborted with this error. `ep.show.id` is only reached for episodes inside the hourly window, so a run crashed exactly when a streaming episode aired in that hour — measured against live TVMaze data, **22 of 24 hourly windows contained one**, covering 229 streaming episodes that could not notify. Broadcast-TV entries are iterated first and were largely unaffected, which is why some runs still reported a non-zero count. The show is now resolved from either shape.
+- **One Bad Send Aborted The Remaining Notifications:** `admin.messaging().send()` was awaited unguarded inside the loop, so a single failure discarded every notification still queued for that hour. Each send is now individually guarded and logged.
+
 ## [1.11.3] - 2026-08-20
 ### Fixed
 - **Push Notifications Stopped Entirely After A Reinstall:** FCM binds topic subscriptions to the *registration token*, not to the account. A reinstall (or cleared data, or a periodic rotation) issues a new token that starts with **no** subscriptions, and FCM does not carry the old ones across. `onNewToken` only wrote a log line, and the sole re-subscribe path was an explicit sign-in whose result was discarded — so all topics were orphaned silently and permanently.
