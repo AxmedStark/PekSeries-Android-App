@@ -9,10 +9,14 @@ import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import az.pekstudios.pekseries.core.database.NotificationDao
 import az.pekstudios.pekseries.core.database.NotificationEntity
+import az.pekstudios.pekseries.core.domain.di.ApplicationScope
+import az.pekstudios.pekseries.core.domain.repository.TopicSynchronizer
 import az.pekstudios.pekseries.core.ui.R
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import javax.inject.Inject
@@ -23,6 +27,13 @@ class PekFirebaseMessagingService : FirebaseMessagingService() {
 
     @Inject
     lateinit var notificationDao: NotificationDao
+
+    @Inject
+    lateinit var topicSynchronizer: TopicSynchronizer
+
+    @Inject
+    @ApplicationScope
+    lateinit var applicationScope: CoroutineScope
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
@@ -46,10 +57,19 @@ class PekFirebaseMessagingService : FirebaseMessagingService() {
         showNotification(title, body, showId)
     }
 
+    /**
+     * A new registration token starts with no topic subscriptions, and FCM does
+     * not carry the old ones over, so every topic has to be re-applied.
+     *
+     * This previously only logged, which is why a reinstall silently ended all
+     * push delivery until the user happened to sign in again.
+     */
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        // Topics are per-install, so a token rotation means re-subscribing.
-        Timber.d("FCM token refreshed")
+        Timber.i("FCM token rotated; re-subscribing topics")
+
+        // Application-scoped: reconciliation outlives this callback.
+        applicationScope.launch { topicSynchronizer.reconcile() }
     }
 
     private fun showNotification(title: String, message: String, showId: String?) {

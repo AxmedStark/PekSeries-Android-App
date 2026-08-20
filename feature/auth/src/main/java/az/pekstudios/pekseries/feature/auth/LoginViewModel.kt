@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import az.pekstudios.pekseries.core.domain.DataError
 import az.pekstudios.pekseries.core.domain.PekResult
 import az.pekstudios.pekseries.core.domain.Validation
+import az.pekstudios.pekseries.core.domain.onFailure
 import az.pekstudios.pekseries.core.domain.repository.AuthRepository
 import az.pekstudios.pekseries.core.domain.repository.SubscriptionRepository
 import az.pekstudios.pekseries.core.domain.repository.UserProfileRepository
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 enum class AuthMode { SignIn, Register }
@@ -163,8 +165,11 @@ class LoginViewModel @Inject constructor(
         when (result) {
             is PekResult.Success -> {
                 // FCM topics live on the install, so they must be re-applied for
-                // whoever just signed in.
+                // whoever just signed in. The result was previously discarded,
+                // which meant a failure here ended push delivery silently.
                 subscriptionRepository.syncTopicsWithFcm()
+                    .onFailure { Timber.w("Topic sync after sign-in failed: %s", it) }
+
                 _uiState.update { it.copy(isSubmitting = false, password = "") }
             }
 

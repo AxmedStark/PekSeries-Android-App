@@ -5,6 +5,17 @@ All notable changes to the PekSeries project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.3] - 2026-08-20
+### Fixed
+- **Push Notifications Stopped Entirely After A Reinstall:** FCM binds topic subscriptions to the *registration token*, not to the account. A reinstall (or cleared data, or a periodic rotation) issues a new token that starts with **no** subscriptions, and FCM does not carry the old ones across. `onNewToken` only wrote a log line, and the sole re-subscribe path was an explicit sign-in whose result was discarded — so all topics were orphaned silently and permanently.
+  - `TopicSynchronizer` now reconciles topics whenever the user becomes signed in, which covers every app start rather than only an interactive login. `subscribeToTopic` is idempotent, so repeating it is free.
+  - `onNewToken` now triggers reconciliation on an application-scoped coroutine, so it survives the service callback.
+  - The sign-in path logs a reconciliation failure instead of discarding it.
+  - Reconciliation respects the push toggle: with notifications off, the reconciled state is "unsubscribed from everything".
+
+### Added
+- Six regression tests around `FcmTopicSynchronizer` covering signed-out no-op, disabled-preference handling, failure not propagating out of `Application.onCreate`, idempotent `start()`, and reconciliation firing on the signed-in transition.
+
 ## [1.11.2] - 2026-08-18
 ### Added
 - **CI on GitHub Actions:** `pr.yml` runs on every pull request and push to `main` — assembles `devDebug`, runs all 93 unit tests, lints, and then assembles `prodRelease` so R8 breakage is caught in CI rather than after a store upload. Test results are published as a check, and reports are uploaded on failure.

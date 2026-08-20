@@ -23,6 +23,8 @@ dependencies {
     implementation(libs.timber)
 
     testImplementation(projects.core.testing)
+    testImplementation(projects.core.datastore)
+    testImplementation(libs.androidx.datastore.preferences)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.truth)
     testImplementation(libs.mockk)
